@@ -3,6 +3,7 @@ const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
+const bcrypt = require('bcryptjs');
 
 require('dotenv').config;
 
@@ -10,14 +11,16 @@ module.exports = {
 
    create: async (req, res)=>{
       try{
-         let user = await userModel.create({ name: req.body.name, email: req.body.email,
-            password: req.body.password, phoneNumber: req.body.phoneNumber });
+         let {name, email, password, phoneNumber, department, role, staffId} = req.body;
+         let user = await userModel.create({ name: name, email: email,
+            password: password, phoneNumber: phoneNumber, department: department, 
+            role: role, staffId: staffId });
          const token = jwt.sign({ _id: user.id.toString() }, process.env['SECRET'], { expiresIn: "7 days" });
          
          if(user){
             await userModel.update({_id: user.id}, {token: token});
             user = await userModel.findOne({_id: user.id}, {password: 0});
-            return res.status(200).json({ status: "Success", message: "Sign Up successfully!!!", data: user });
+            return res.status(200).json({ status: "Success", message: "User Created Successfully!"});
          }
          else{
             return res.status(500).json({ status: "failed", message: "Unable to Register."});
@@ -38,10 +41,17 @@ module.exports = {
                return res.status(404).json({ status: "Error", message: "User does not exist." });
             }
             else{
-               const token = jwt.sign({ _id: user.id.toString() }, process.env['SECRET'], { expiresIn: "7 days" });
-               await userModel.update({_id: user.id},{token: token});
-               User = await userModel.findOne({_id: user.id}, {password: 0});
-               return res.status(200).json({ status: "Success", data: User });
+               let User = await findOne({_id: user.id},{password: 0, adminVerificationCode: 0});
+               if(User.role === 'Admin'){
+                  return res.status(403).json({status: "Not Authorized", message: "You cant Login as Admin"});
+               }
+               else{
+                  const token = jwt.sign({ _id: user.id.toString() }, process.env['SECRET'], { expiresIn: "7 days" });
+                  await userModel.update({_id: user.id},{token: token});
+                  User = await userModel.findOne({_id: user.id}, {password: 0, adminVerificationCode: 0});
+                  return res.status(200).json({ status: "Success", data: User });
+               }
+               
             }
          })(req, res);
       }
@@ -49,18 +59,26 @@ module.exports = {
          return res.status(403).json({ status: "error", message: e.message });
       }
    },
-
+   changePassword: async (req, res) => {
+      try{
+         let id = req.params.id;
+         let {password} = req.body;
+         password = bcrypt.hashSync(this.password, 10);
+         await userModel.update({_id: id}, {password: password});
+         res.status(200).json({status: "Success", message: "Password Changed"});
+      }
+      catch(e){
+         return res.status(403).json({ status: "error", message: e.message });
+      }
+   },
    updateUser: async (req, res)=>{
       try{
-         const countStates = await userModel.count({state: req.body.state});
-         await userModel.update({_id: req.params.id}, { name: req.body.name, email: req.body.email, 
-            state: req.body.phoneNumber, token: req.headers.authorization});
+         let {name, email, phoneNumber, department, role} = req.body;
+         await userModel.update({_id: req.params.id}, { name: name, email: email, 
+            phoneNumber: phoneNumber, department: department, role: role, token: req.headers.authorization});
          const user = await userModel.findOne({ _id: req.params.id }, { password: 0 });
          
          if(user){
-            if(countStates === 0){
-               news(user.state);
-            }
             return res.status(200).json({ status: "Updated", message: "User Updated Successfully!", data: user });
          }
          else{
@@ -75,7 +93,7 @@ module.exports = {
    removeUser: async (req, res)=> {
       try{
          user = await userModel.remove({ _id: req.params.id });
-         if(user){
+         if(!user){
             return res.status(404).json({ status: "Error", message: " User not Found! " });
          }
          else {
@@ -89,9 +107,9 @@ module.exports = {
 
    ListUsers: async (req, res)=>{
       try{
-         user = await userModel.find({}, { name: 1, email: 1 });
+         user = await userModel.find({role: 'Staff'}, { password: 0, adminVerificationCode: 0});
          if(user){
-            return res.status(200).json({ status: "Success", message: "All Users", data: users });
+            return res.status(200).json({ status: "Success", message: "All Users", data: user });
          }
          else{
             return res.status(204).json({status: "No User's yet", message: "There are no users yet on laxir"});

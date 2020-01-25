@@ -7,6 +7,7 @@ const VenueSchema = new Schema({
         type: String,
         trim: true,
         required: true,
+        unique: true
     },
     size: {
         type: Number

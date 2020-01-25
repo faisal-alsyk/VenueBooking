@@ -19,7 +19,7 @@ module.exports = {
     updateVenue: async (req, res) => {
         try {
             await venueModel.update({_id: req.decoded._id}, {status: req.body.status});
-            res.status(200).json({status: "Success", message: "Venue Status Updated"});   
+            res.status(200).json({status: "Success", message: "Venue Updated Successfully"});   
         } 
         catch (e) {
             return res.status(403).json({ status: "error", message: e.message });

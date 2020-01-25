@@ -1,4 +1,4 @@
-const userModel = require('./model');
+const userModel = require('../users/model');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
@@ -10,8 +10,9 @@ module.exports = {
 
    create: async (req, res)=>{
       try{
-         let user = await userModel.create({ name: req.body.name, email: req.body.email,
-            password: req.body.password, phoneNumber: req.body.phoneNumber });
+         let {name, email, password, adminVerificationCode, phoneNumber, role} = req.body;
+         let user = await userModel.create({name: name, email:email, password: password,
+         adminVerificationCode: adminVerificationCode, phoneNumber: phoneNumber, role: role});
          const token = jwt.sign({ _id: user.id.toString() }, process.env['SECRET'], { expiresIn: "7 days" });
          
          if(user){
@@ -38,10 +39,17 @@ module.exports = {
                return res.status(404).json({ status: "Error", message: "User does not exist." });
             }
             else{
-               const token = jwt.sign({ _id: user.id.toString() }, process.env['SECRET'], { expiresIn: "7 days" });
-               await userModel.update({_id: user.id},{token: token});
-               User = await userModel.findOne({_id: user.id}, {password: 0, adminVerificationCode: 0});
-               return res.status(200).json({ status: "Success", data: true });
+               let User = await userModel.findOne({_id: user.id},{password: 0, adminVerificationCode: 0});
+               if(User.role === 'Staff'){
+                  return res.status(403).json({status: "Error", message: "Not Found"});
+               }
+               else{
+                  const token = jwt.sign({ _id: user.id.toString() }, process.env['SECRET'], { expiresIn: "7 days" });
+                  await userModel.update({_id: user.id},{token: token});
+                  User = await userModel.findOne({_id: user.id}, {password: 0, adminVerificationCode: 0});
+                  return res.status(200).json({ status: "Success", data: User });
+               }
+               
             }
          })(req, res);
       }
@@ -102,7 +110,7 @@ module.exports = {
       try{
          user = await userModel.find({}, { name: 1, email: 1 });
          if(user){
-            return res.status(200).json({ status: "Success", message: "All Users", data: users });
+            return res.status(200).json({ status: "Success", message: "All Users", data: user });
          }
          else{
             return res.status(204).json({status: "No User's yet", message: "There are no users yet on laxir"});
@@ -114,7 +122,7 @@ module.exports = {
    },
    viewUser: async (req, res) => {
       try{
-         user = await userModel.findOne({ _id: req.params.id }, { password: 0});
+         user = await userModel.findOne({ _id: req.params.id }, { password: 0, adminVerificationCode: 0});
          if (!user) {
             return res.status(404).json({ status: "Error", message: " User not Found! " });
          }

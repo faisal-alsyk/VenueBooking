@@ -6,9 +6,9 @@ const venueController = require('./controller');
 
 require('dotenv').config;
 
-router.post('/create', venueController.createVenue);
+router.post('/create', middleware.authenticateToken, venueController.createVenue);
 router.get('/', middleware.authenticateToken, venueController.listVenues);
-router.patch('/:id', middleware.authorizeToken, venueController.updateVenue);
+router.patch('/:id', middleware.authenticateToken, venueController.updateVenue);
 router.delete('/:id', middleware.authenticateToken, venueController.deleteVenue);
 
 module.exports = router;

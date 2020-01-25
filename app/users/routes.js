@@ -6,14 +6,15 @@ const userController = require('./controller');
 
 require('dotenv').config;
 
-router.post('/signup', userController.create);
+router.post('/create', middleware.authenticateToken, userController.create);
 router.get('/', middleware.authenticateToken, userController.ListUsers);
-router.patch('/:id', middleware.authorizeToken, userController.updateUser);
+router.patch('/:id', middleware.authenticateToken, userController.updateUser);
 router.delete('/:id', middleware.authenticateToken, userController.removeUser);
-router.get('/:id', middleware.authorizeToken, userController.viewUser);
+router.get('/:id', middleware.authenticateToken, userController.viewUser);
 router.post('/login', userController.login);
 router.post('/forgotpassword', userController.forgotPassword);
 router.post('/resetpassword/:token', userController.resetPassword);
 router.get('/authenticate', middleware.authenticateToken, userController.dashboard);
+router.patch('/changepassword/:id', middleware.authenticateToken, userController.changePassword);
 
 module.exports = router;

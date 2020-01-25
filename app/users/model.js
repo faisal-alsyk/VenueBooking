@@ -25,6 +25,10 @@ const UserSchema = new Schema({
         type: String,
         trim: true
     },
+    adminVerificationCode: {
+        type: String,
+        trim: true
+    },
     department: {
         type: String,
         trim: true
@@ -42,9 +46,16 @@ const UserSchema = new Schema({
         type: String,
         trim: true
     },
-    type: {
+    role: {
         type: String,
-        default: 'User'
+        enum: ['Admin', 'Staff'],
+        default: 'Staff'
+    },
+    status: {
+        type: String,
+        enum: ['Pending', 'Active'],
+        default: 'Active',
+        trim: true
     }
 },{timestamps: true});
 // hash user password before saving into database

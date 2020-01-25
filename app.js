@@ -29,10 +29,13 @@ var corsOptions = {
     }
   }
 }
-if (process.env['NODE_ENV'] === 'production') {
-  app.options('*', cors());
+
+// app.options('*', cors());
   app.use(cors());
-}
+// if (process.env['NODE_ENV'] === 'production') {
+//   app.options('*', cors());
+//   app.use(cors());
+// }
 
 
 // connection to mongodb
@@ -79,8 +82,8 @@ passport.deserializeUser(function (obj, done) {
 
 //Public Route
 app.use('/api/users', users);
-app.use('api/admin', admin);
-app.use('api/venues', venues);
+app.use('/api/admin', admin);
+app.use('/api/venues', venues);
 
 app.use(function (err, req, res, next) {
   if(err.message){
