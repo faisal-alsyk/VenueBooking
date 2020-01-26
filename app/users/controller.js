@@ -41,7 +41,7 @@ module.exports = {
                return res.status(404).json({ status: "Error", message: "User does not exist." });
             }
             else{
-               let User = await findOne({_id: user.id},{password: 0, adminVerificationCode: 0});
+               let User = await userModel.findOne({_id: user.id},{password: 0, adminVerificationCode: 0});
                if(User.role === 'Admin'){
                   return res.status(403).json({status: "Not Authorized", message: "You cant Login as Admin"});
                }
@@ -76,7 +76,7 @@ module.exports = {
          let {name, email, phoneNumber, department, role} = req.body;
          await userModel.update({_id: req.params.id}, { name: name, email: email, 
             phoneNumber: phoneNumber, department: department, role: role, token: req.headers.authorization});
-         const user = await userModel.findOne({ _id: req.params.id }, { password: 0 });
+         const user = await userModel.findOne({ _id: req.params.id }, { password: 0, adminVerificationCode: 0 });
          
          if(user){
             return res.status(200).json({ status: "Updated", message: "User Updated Successfully!", data: user });

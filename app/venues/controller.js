@@ -42,7 +42,7 @@ module.exports = {
     deleteVenue: async (req, res) => {
         try{
             let venue = await venueModel.remove({ _id: req.params.id });
-            if(user){
+            if(!venue){
                return res.status(404).json({ status: "Error", message: " Venue not Found! " });
             }
             else {
@@ -52,5 +52,19 @@ module.exports = {
          catch (e) {
             return res.status(403).json({ status: "Error", message: e.message });
          }
+    },
+    getVenue: async (req, res)=>{
+        try {
+            let venue = await venueModel.findOne({_id: req.params.id});
+            if(venue){
+                return res.status(200).json({status: "Success", data: venue});
+            }
+            else{
+                return res.status(403).json({ status: "Error", message: e.message });
+            }
+        }
+        catch (e) {
+            
+        }
     }
 }

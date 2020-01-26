@@ -10,7 +10,7 @@ router.post('/signup', userController.create);
 router.get('/', middleware.authenticateToken, userController.ListUsers);
 router.patch('/:id', middleware.authorizeToken, userController.updateUser);
 router.delete('/:id', middleware.authenticateToken, userController.removeUser);
-router.get('/:id', middleware.authorizeToken, userController.viewUser);
+router.get('/:id', middleware.authenticateToken, userController.viewUser);
 router.post('/login', userController.login);
 router.post('/verifycode', middleware.authenticateToken, userController.verifyCode);
 router.post('/forgotpassword', userController.forgotPassword);
