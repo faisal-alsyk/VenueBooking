@@ -18,8 +18,9 @@ module.exports = {
     },
     updateVenue: async (req, res) => {
         try {
-            await venueModel.update({_id: req.decoded._id}, {status: req.body.status});
-            res.status(200).json({status: "Success", message: "Venue Updated Successfully"});   
+            await venueModel.update({_id: req.decoded._id}, {name: req.body.name,
+                size: req.body.size, status: req.body.status});
+            res.status(200).json({status: "Updated", message: "Venue Updated Successfully"});   
         } 
         catch (e) {
             return res.status(403).json({ status: "error", message: e.message });
@@ -43,7 +44,7 @@ module.exports = {
         try{
             let venue = await venueModel.remove({ _id: req.params.id });
             if(!venue){
-               return res.status(404).json({ status: "Error", message: " Venue not Found! " });
+               return res.status(404).json({ status: "Error", message: "Venue not Found! " });
             }
             else {
                return res.status(200).json({ status: "Deleted!", data: venue });

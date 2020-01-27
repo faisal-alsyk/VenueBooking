@@ -31,7 +31,7 @@ var corsOptions = {
 }
 
 // app.options('*', cors());
-  // app.use(cors());
+  app.use(cors());
 if (process.env['NODE_ENV'] === 'production') {
   app.options('*', cors());
   app.use(cors());
