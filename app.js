@@ -4,6 +4,7 @@ const express = require('express'),
   users = require('./app/users/routes'),
   admin = require('./app/admins/routes'),
   venues = require('./app/venues/routes'),
+  bookings = require('./app/bookings/routes'),
   passport = require('passport'),
   LocalStrategy = require('passport-local').Strategy,
   bodyParser = require('body-parser'),
@@ -84,6 +85,7 @@ passport.deserializeUser(function (obj, done) {
 app.use('/api/users', users);
 app.use('/api/admin', admin);
 app.use('/api/venues', venues);
+app.use('/api/bookings', bookings);
 
 app.use(function (err, req, res, next) {
   if(err.message){

@@ -44,7 +44,7 @@ module.exports = {
         try{
             let venue = await venueModel.remove({ _id: req.params.id });
             if(!venue){
-               return res.status(404).json({ status: "Error", message: "Venue not Found! " });
+               return res.status(401).json({ status: "Error", message: "Venue not Found! " });
             }
             else {
                return res.status(200).json({ status: "Deleted!", data: venue });
@@ -61,11 +61,11 @@ module.exports = {
                 return res.status(200).json({status: "Success", data: venue});
             }
             else{
-                return res.status(403).json({ status: "Error", message: e.message });
+                return res.status(401).json({status: "Failed", message: "Venue not Found"});
             }
         }
         catch (e) {
-            
+            return res.status(403).json({ status: "Error", message: e.message });
         }
     }
 }

@@ -22,8 +22,8 @@ const UserSchema = new Schema({
         required: true
     },
     staffId: {
-        type: String,
-        trim: true
+        type: Number,
+        unique: true
     },
     adminVerificationCode: {
         type: String,
@@ -48,8 +48,7 @@ const UserSchema = new Schema({
     },
     role: {
         type: String,
-        enum: ['Admin', 'Staff'],
-        default: 'Staff'
+        enum: ['Admin', 'User', 'Public']
     },
     status: {
         type: String,

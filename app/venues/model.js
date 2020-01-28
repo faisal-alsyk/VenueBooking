@@ -18,6 +18,7 @@ const VenueSchema = new Schema({
     },
     venueId: {
         type: Number,
+        unique: true,
         unique: true
     }
     
