@@ -18,7 +18,7 @@ module.exports = {
     },
     updateVenue: async (req, res) => {
         try {
-            await venueModel.update({_id: req.decoded._id}, {name: req.body.name,
+            await venueModel.update({_id: req.params.id}, {name: req.body.name,
                 size: req.body.size, status: req.body.status});
             res.status(200).json({status: "Updated", message: "Venue Updated Successfully"});   
         } 
