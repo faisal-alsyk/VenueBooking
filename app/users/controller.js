@@ -61,8 +61,7 @@ module.exports = {
    },
    changePassword: async (req, res) => {
       try{
-         let id = req.params.id;
-         let {password} = req.body;
+         let {id, password} = req.body;
          password = bcrypt.hashSync(this.password, 10);
          await userModel.update({_id: id}, {password: password});
          res.status(200).json({status: "Success", message: "Password Changed"});

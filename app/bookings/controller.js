@@ -111,9 +111,9 @@ module.exports = {
                     for (booking of bookings){
                         event = {
                             "id": booking._id,
-                            "title": booking.name,
-                            "start": booking.startTime,
-                            "end": booking.endTime,
+                            "title": booking.title,
+                            "start": booking.start,
+                            "end": booking.end,
                             "resourceId": booking.venueId
                         };
                         events.push(event);
