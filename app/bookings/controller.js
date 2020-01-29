@@ -1,10 +1,12 @@
 const bookingModel = require('./model');
+const userModel = require('../users/model');
 
 module.exports = {
     createBooking: async (req, res) => {
         try {
-            let {name, venueId, userId, purpose, date, time, startTime, endTime, endDate} = req.body;
-            let booking = await bookingModel.create({name: name, venueId: venueId, userId: userId,
+            let user = await userModel.findOne({_id: req.decoded._id},{password: 0, adminVerificationCode: 0});
+            let {name, venueId, purpose, date, time, startTime, endTime, endDate} = req.body;
+            let booking = await bookingModel.create({name: name, venueId: venueId, userId: user.userId,
                     purpose: purpose, date: date, time: time, startTime: startTime,
                     endTime: endTime, endDate: endDate});
             if (booking) {
