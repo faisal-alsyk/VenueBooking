@@ -8,8 +8,7 @@ const BookingSchema = new Schema({
         trim: true
     },
     userId: {
-        type: Number,
-        required: true
+        type: Number
     },
     venueId: {
         type: Number,

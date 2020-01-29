@@ -12,5 +12,6 @@ router.get('/', middleware.authenticateToken, bookingController.listBookings);
 router.get('/:id', middleware.authenticateToken, bookingController.getBooking);
 router.patch('/:id', middleware.authenticateToken, bookingController.updateBooking);
 router.delete('/:id', middleware.authenticateToken, bookingController.deleteBooking);
+// router.get('/', bookingController.getCalendarData);
 
 module.exports = router;

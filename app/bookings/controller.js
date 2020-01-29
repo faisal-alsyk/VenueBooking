@@ -95,5 +95,28 @@ module.exports = {
         catch (e) {
             return res.status(403).json({ status: "Error", message: e.message });
         }
+    },
+    getCalendarData: async (req, res)=>{
+        try {
+            let events = [], event = {};
+            let bookings = await bookingModel.find({});
+            if(bookings){
+                for (booking of bookings){
+                    event = {
+                        title: booking.name,
+                        start: booking.startTime,
+                        end: booking.endTime
+                    };
+                    events.push(event);
+                }
+                return res.status(200).json({status: "Success", data: events});
+            }
+            else{
+                return res.status(404).json({ status: "Failed", message: "Booking not Found" });
+            }
+        }
+        catch (e) {
+            return res.status(403).json({ status: "Error", message: e.message });
+        }
     }
 }
