@@ -1,5 +1,6 @@
 const bookingModel = require('./model');
 const userModel = require('../users/model');
+const venueModel = require('../venues/model');
 
 module.exports = {
     createBooking: async (req, res) => {
