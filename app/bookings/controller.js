@@ -102,19 +102,19 @@ module.exports = {
             if( venues ) {
                 for (venue of venues) {
                     resource = {
-                        id: venue._id,
-                        title: venue.name
+                        "id": venue._id,
+                        "title": venue.name
                     };
                     resources.push(resource);
                 }
                 if(bookings){
                     for (booking of bookings){
                         event = {
-                            id: booking._id,
-                            title: booking.name,
-                            start: booking.startTime,
-                            end: booking.endTime,
-                            resourceId: booking.venueId
+                            "id": booking._id,
+                            "title": booking.name,
+                            "start": booking.startTime,
+                            "end": booking.endTime,
+                            "resourceId": booking.venueId
                         };
                         events.push(event);
                     }
