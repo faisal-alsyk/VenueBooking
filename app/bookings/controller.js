@@ -5,8 +5,8 @@ module.exports = {
     createBooking: async (req, res) => {
         try {
             let user = await userModel.findOne({_id: req.decoded._id},{password: 0, adminVerificationCode: 0});
-            let {name, venueId, purpose, date, time, startTime, endTime, endDate} = req.body;
-            let booking = await bookingModel.create({name: name, venueId: venueId, userId: user.userId,
+            let {title, venueId, purpose, date, time, startTime, endTime, endDate} = req.body;
+            let booking = await bookingModel.create({title: title, venueId: venueId, userId: user.staffId,
                     purpose: purpose, date: date, time: time, startTime: startTime,
                     endTime: endTime, endDate: endDate});
             if (booking) {
@@ -25,8 +25,8 @@ module.exports = {
             let allBookings = [];
             let bookings = req.body;
             for (booking of bookings){
-                let {name, venueId, userId, purpose, date, time, startTime, endTime, endDate} = booking;
-                let bookvenue = await bookingModel.create({name: name, venueId: venueId, userId: userId,
+                let {title, venueId, userId, purpose, date, time, startTime, endTime, endDate} = booking;
+                let bookvenue = await bookingModel.create({title: title, venueId: venueId, userId: userId,
                     purpose: purpose, date: date, time: time, startTime: startTime,
                     endTime: endTime, endDate: endDate});
                 allBookings.push(bookvenue);
@@ -89,7 +89,7 @@ module.exports = {
                 return res.status(200).json({status: "Success", data: booking});
             }
             else{
-                return res.status(401).json({ status: "Failed", message: "Booking not Found" });
+                return res.status(404).json({ status: "Failed", message: "Booking not Found" });
             }
         }
         catch (e) {
@@ -103,6 +103,7 @@ module.exports = {
             if(bookings){
                 for (booking of bookings){
                     event = {
+                        _id: booking._id, 
                         title: booking.name,
                         start: booking.startTime,
                         end: booking.endTime
