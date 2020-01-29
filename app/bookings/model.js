@@ -8,7 +8,8 @@ const BookingSchema = new Schema({
         trim: true
     },
     userId: {
-        type: Number
+        type: Number,
+        required: true
     },
     venueId: {
         type: Number,
@@ -18,23 +19,11 @@ const BookingSchema = new Schema({
         type: String,
         trim: true
     },
-    date: {
+    start: {
         type: String,
         trim: true
     },
-    time: {
-        type: String,
-        trim: true
-    },
-    endDate: {
-        type: String,
-        trim: true
-    },
-    startTime: {
-        type: String,
-        trim: true
-    },
-    endTime: {
+    end: {
         type: String,
         trim: true
     }

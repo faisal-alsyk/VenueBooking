@@ -5,10 +5,9 @@ module.exports = {
     createBooking: async (req, res) => {
         try {
             let user = await userModel.findOne({_id: req.decoded._id},{password: 0, adminVerificationCode: 0});
-            let {title, venueId, purpose, date, time, startTime, endTime, endDate} = req.body;
-            let booking = await bookingModel.create({title: title, venueId: venueId, userId: user.staffId,
-                    purpose: purpose, date: date, time: time, startTime: startTime,
-                    endTime: endTime, endDate: endDate});
+            let {title, venueId, purpose, start, end} = req.body;
+            let booking = await bookingModel.create({title: title, venueId: venueId, userId: user._id,
+                    purpose: purpose, start: start, end: end});
             if (booking) {
                 res.status(200).json({status: "Success", data: booking});
             }
@@ -25,10 +24,9 @@ module.exports = {
             let allBookings = [];
             let bookings = req.body;
             for (booking of bookings){
-                let {title, venueId, userId, purpose, date, time, startTime, endTime, endDate} = booking;
+                let {title, venueId, userId, purpose, start, end} = booking;
                 let bookvenue = await bookingModel.create({title: title, venueId: venueId, userId: userId,
-                    purpose: purpose, date: date, time: time, startTime: startTime,
-                    endTime: endTime, endDate: endDate});
+                    purpose: purpose, start: start, end: end});
                 allBookings.push(bookvenue);
             }
             if (allBookings.length > 0) {
@@ -44,10 +42,9 @@ module.exports = {
     },
     updateBooking: async (req, res) => {
         try {
-            let {name, venueId, userId, purpose, date, time, startTime, endTime, endDate} = req.body;
+            let {name, venueId, purpose, start, end} = req.body;
             await bookingModel.update({_id: req.params.id}, {name: name, venueId: venueId,
-                userId: userId,purpose: purpose, date: date, time: time, startTime: startTime,
-                endTime: endTime, endDate: endDate});
+                purpose: purpose, start: start, end: end});
             res.status(200).json({status: "Updated", message: "booking Updated Successfully"});   
         } 
         catch (e) {
@@ -98,22 +95,36 @@ module.exports = {
     },
     getCalendarData: async (req, res)=>{
         try {
-            let events = [], event = {};
+            let resources = [], resource = {}, events = [], event = {};
             let bookings = await bookingModel.find({});
-            if(bookings){
-                for (booking of bookings){
-                    event = {
-                        _id: booking._id, 
-                        title: booking.name,
-                        start: booking.startTime,
-                        end: booking.endTime
+            let venues = await venueModel.find({});
+            if( venues ) {
+                for (venue of venues) {
+                    resource = {
+                        id: venue._id,
+                        title: venue.name
                     };
-                    events.push(event);
+                    resources.push(resource);
                 }
-                return res.status(200).json({status: "Success", data: events});
+                if(bookings){
+                    for (booking of bookings){
+                        event = {
+                            id: booking._id,
+                            title: booking.name,
+                            start: booking.startTime,
+                            end: booking.endTime,
+                            resourceId: booking.venueId
+                        };
+                        events.push(event);
+                    }
+                    return res.status(200).json({status: "Success", resources: resources, events: events});
+                }
+                else{
+                    return res.status(404).json({ status: "Failed", message: "There are no Bookings yet" });
+                }
             }
             else{
-                return res.status(404).json({ status: "Failed", message: "Booking not Found" });
+                return res.status(404).json({ status: "Failed", message: "No Venues yet, Please add some Venues" });
             }
         }
         catch (e) {
