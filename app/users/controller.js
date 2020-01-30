@@ -106,7 +106,7 @@ module.exports = {
 
    ListUsers: async (req, res)=>{
       try{
-         user = await userModel.find({role: 'Staff'}, { password: 0, adminVerificationCode: 0});
+         user = await userModel.find({}, { password: 0, adminVerificationCode: 0});
          if(user){
             return res.status(200).json({ status: "Success", message: "All Users", data: user });
          }

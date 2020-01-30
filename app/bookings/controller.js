@@ -43,8 +43,8 @@ module.exports = {
     },
     updateBooking: async (req, res) => {
         try {
-            let {name, venueId, purpose, start, end} = req.body;
-            await bookingModel.update({_id: req.params.id}, {name: name, venueId: venueId,
+            let {title, venueId, purpose, start, end} = req.body;
+            await bookingModel.update({_id: req.params.id}, {title: title, venueId: venueId,
                 purpose: purpose, start: start, end: end});
             res.status(200).json({status: "Updated", message: "booking Updated Successfully"});   
         } 
