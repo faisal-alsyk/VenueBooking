@@ -1,6 +1,7 @@
 const bookingModel = require('./model');
 const userModel = require('../users/model');
 const venueModel = require('../venues/model');
+const timeGap = require('../../functions/bookings').getTimeSlot;
 
 module.exports = {
     createBooking: async (req, res) => {
@@ -151,5 +152,10 @@ module.exports = {
         catch (e) {
             return res.status(403).json({ status: "Error", message: e.message });
         }
+    },
+    getAvailableTimeSlot : async (req, res) => {
+        let {venueId, start, end } = req.body;
+        const available = await timeGap(venueId, start, end);
+        res.json(available);
     }
 }
