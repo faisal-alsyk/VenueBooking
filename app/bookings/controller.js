@@ -54,7 +54,15 @@ module.exports = {
     },
     listBookings: async (req, res) => {
         try {
-            let bookings = await bookingModel.find({});
+            const role = req.query.role;
+            let bookings = [];
+            if(role){
+                let users = await userModel.find({role: role}, {_id: 1});
+                bookings = await bookingModel.find({userId: {$in: users}});
+            }
+            else{
+                bookings = await bookingModel.find({});
+            }
             if(bookings) {
                 res.status(200).json({status: "Success", data: bookings});
             }
@@ -97,7 +105,19 @@ module.exports = {
     getCalendarData: async (req, res)=>{
         try {
             let resources = [], resource = {}, events = [], event = {};
-            let bookings = await bookingModel.find({});
+            const role = req.query.role;
+            let bookings = [];
+            if(role){
+                let users = await userModel.find({role: role}, {password: 0, adminVerificationCode: 0});
+                let usersId = [];
+                users.map(user=>{
+                    usersId.push(user._id);
+                });
+                bookings = await bookingModel.find({userId: {$in: usersId}});
+            }
+            else{
+                bookings = await bookingModel.find({});
+            }
             let venues = await venueModel.find({});
             if( venues ) {
                 for (venue of venues) {
