@@ -25,9 +25,10 @@ module.exports = {
         try {
             let allBookings = [];
             let bookings = req.body;
+            let user = await userModel.findOne({_id: req.decoded._id}, {adminVerificationCode: 0, password: 0});
             for (booking of bookings){
-                let {title, venueId, userId, purpose, start, end} = booking;
-                let bookvenue = await bookingModel.create({title: title, venueId: venueId, userId: userId,
+                let {title, venueId, purpose, start, end} = booking;
+                let bookvenue = await bookingModel.create({title: title, venueId: venueId, userId: user._id,
                     purpose: purpose, start: start, end: end});
                 allBookings.push(bookvenue);
             }
