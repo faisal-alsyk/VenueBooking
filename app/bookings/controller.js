@@ -2,6 +2,7 @@ const bookingModel = require('./model');
 const userModel = require('../users/model');
 const venueModel = require('../venues/model');
 const timeGap = require('../../functions/bookings').getTimeSlot;
+const moment = require('moment');
 
 module.exports = {
     createBooking: async (req, res) => {
@@ -23,14 +24,19 @@ module.exports = {
     },
     createBookinginBulk: async (req, res) => {
         try {
-            let allBookings = [];
+            let allBookings = [], bookVenue = {}, start = '', end = '';
             let bookings = req.body;
             let user = await userModel.findOne({_id: req.decoded._id}, {adminVerificationCode: 0, password: 0});
             for (booking of bookings){
-                let {title, venueId, purpose, start, end} = booking;
-                let bookvenue = await bookingModel.create({title: title, venueId: venueId, userId: user._id,
-                    purpose: purpose, start: start, end: end});
-                allBookings.push(bookvenue);
+                let {title, venueName, purpose, startDate, endDate, startTime, endTime} = booking;
+                let venue = await venueModel.findOne({name: venueName});
+                start = moment(`${startDate} ${startTime}`, 'YYYY-MM-DD h:mm:ss').format();
+                end = moment(`${endDate} ${endTime}`, 'YYYY-MM-DD h:mm:ss').format();
+                if (start && end){
+                    bookvenue = await bookingModel.create({title: title, venueId: venue._id, userId: user._id,
+                        purpose: purpose, start: start, end: end});
+                    allBookings.push(bookvenue);
+                }
             }
             if (allBookings.length > 0) {
                 res.status(200).json({status: "Success", data: allBookings});
