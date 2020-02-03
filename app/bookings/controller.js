@@ -200,7 +200,7 @@ module.exports = {
             let newStartTime = new moment(start);
             let newEndTime = new moment(end);
             for (bookedVenue of bookedVenues){
-                clashes = clashesWithExisting(bookedVenue.start, bookedVenue.end, newStartTime, newEndTime);
+                clashes = priorityBookingClashes(bookedVenue.start, bookedVenue.end, newStartTime, newEndTime);
                 if(clashes){
                     bookedVenue.time = (bookedVenue.end - bookedVenue.start);
                     clashedBookings.push(bookedVenue);
@@ -216,8 +216,10 @@ module.exports = {
                     let updatedStartTime = newEndTime, updatedEndTime;
                     for (clashedBooking of clashedBookings) {
                         updatedStartTime = new moment(updatedStartTime);
-                        let time = new moment(clashedBooking.end - clashedBooking.start);
-                        updatedEndTime = new moment(updatedStartTime).add({hours: time.getHours(), minutes: time.getMinutes()});
+                        let time = clashedBooking.end - clashedBooking.start;
+                        // let time = moment.duration((clashedBooking.end).diff(clashedBooking.start));
+                        // let difference = time.asSeconds();
+                        updatedEndTime = new moment(updatedStartTime).add(time, 'ms');
                         await bookingModel.create({title: clashedBooking.title, venueId: clashedBooking.venueId,
                                 userId: clashedBooking.userId, purpose: clashedBooking.purpose, start: updatedStartTime,
                                 end: updatedEndTime});
@@ -225,21 +227,35 @@ module.exports = {
                 }
                 else {
                     for (clashedBooking of clashedBookings){
+                        let existingBookingEnd = true;
                         for (let i = 0; i < existingBooking.length-1; i++){
                             let updatedStartTime = existingBooking[i].end, updatedEndTime;
                             let availableGap = existingBooking[i+1] - existingBooking[i];
                             if(availableGap > clashedBooking.time){
                                 updatedStartTime = new moment(updatedStartTime);
-                                let time = new Date(clashedBooking.end - clashedBooking.start);
-                                updatedEndTime = new moment(updatedStartTime).add({hours: time.getHours(), 
-                                    minutes: time.getMinutes()});
+                                let time = clashedBooking.end - clashedBooking.start;
+                                // let time = moment.duration((clashedBooking.end).diff(clashedBooking.start));
+                                // let difference = time.asSeconds();
+                                updatedEndTime = new moment(updatedStartTime).add(time, 'ms');
                                 await bookingModel.create({title: clashedBooking.title, venueId: clashedBooking.venueId,
                                         userId: clashedBooking.userId, purpose: clashedBooking.purpose, 
                                         start: updatedStartTime, end: updatedEndTime});
-                                existingBooking = await bookingModel.find({start: {$gte: newEndTime}});
+                                existingBookingEnd = false;
                                 break;
                             }
                         }
+                        if ( existingBookingEnd ){
+                            let updatedStartTime = new moment(existingBooking[(existingBooking.length)-1].end);
+                            let time = clashedBooking.end - clashedBooking.start;
+                            // let time = moment.duration((clashedBooking.end).diff(clashedBooking.start));
+                            // let difference = time.asSeconds();
+                            let updatedEndTime = new moment(updatedStartTime).add(time, 'ms');
+                            await bookingModel.create({title: clashedBooking.title, venueId: clashedBooking.venueId,
+                                    userId: clashedBooking.userId, purpose: clashedBooking.purpose, 
+                                    start: updatedStartTime, end: updatedEndTime});
+                            existingBooking = await bookingModel.find({start: {$gte: newEndTime}});
+                        }
+                        existingBooking = await bookingModel.find({start: {$gte: newEndTime}});
                     }
                     
                 }
@@ -249,10 +265,6 @@ module.exports = {
             else{
                 res.status(500).json({status: "Failed", message: "Unable to book a Venue"});
             } 
-            
-            
-
-
         }
         catch (e) {
             return res.status(403).json({ status: "Error", message: e.message });
