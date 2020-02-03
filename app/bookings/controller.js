@@ -22,13 +22,6 @@ let priorityBookingClashes = (existingBookingStart, existingBookingEnd, newBooki
     return false;
   }
 
-let timeGap = (bookingOneEnd, bookingTwoStart, newBookingStart, newBookingEnd) => {
-    let slotGap = new Date(bookingTwoStart) - new Date(bookingOneEnd);
-    let requiredGap = new Date(newBookingEnd) - new Date(newBookingStart);
-    if(slotGap > requiredGap ){
-        return true;
-    }
-}
 
 module.exports = {
     createBooking: async (req, res) => {
@@ -37,10 +30,10 @@ module.exports = {
             let user = await userModel.findOne({_id: req.decoded._id},{password: 0, adminVerificationCode: 0});
             let {title, venueId, purpose, start, end} = req.body;
             const bookedVenues = await bookingModel.find({venueId: venueId});
-            let newStartTime = new Date(start);
-            let newEndTime = new Date(end);
+            let newStartTime = new moment(start);
+            let newEndTime = new moment(end);
             for (bookedVenue of bookedVenues){
-                noClashes = clashesWithExisting(bookedVenue.start, bookedVenue.end, existingEndTime, newStartTime, newEndTime);
+                noClashes = clashesWithExisting(bookedVenue.start, bookedVenue.end, newStartTime, newEndTime);
             }
             if(noClashes === "true"){
                 let booking = await bookingModel.create({title: title, venueId: venueId, userId: user._id,
@@ -200,15 +193,16 @@ module.exports = {
     },
     priorityBooking : async (req, res) => {
         try {
-            let noClashes = false, clashedBookings = [], clashbooking = [];
+            let clashes = false, clashedBookings = [], clashbooking = [];
             let user = await userModel.findOne({_id: req.decoded._id},{password: 0, adminVerificationCode: 0});
             let {title, venueId, purpose, start, end} = req.body;
             const bookedVenues = await bookingModel.find({venueId: venueId});
-            let newStartTime = new Date(start);
-            let newEndTime = new Date(end);
+            let newStartTime = new moment(start);
+            let newEndTime = new moment(end);
             for (bookedVenue of bookedVenues){
-                noClashes = clashesWithExisting(bookedVenue.start, bookedVenue.end, newStartTime, newEndTime);
-                if(noClashes){
+                clashes = clashesWithExisting(bookedVenue.start, bookedVenue.end, newStartTime, newEndTime);
+                if(clashes){
+                    bookedVenue.time = (bookedVenue.end - bookedVenue.start);
                     clashedBookings.push(bookedVenue);
                     clashbooking.push(bookedVenue._id);
                 }
@@ -217,7 +211,38 @@ module.exports = {
                 purpose: purpose, start: start, end: end});
             if (booking) {
                 await bookingModel.remove({_id: {$in: clashbooking}});
-                let existingBooking = await bookingModel.find({})
+                let existingBooking = await bookingModel.find({start: {$gte: newEndTime}});
+                if(existingBooking.length === 0) {
+                    let updatedStartTime = newEndTime, updatedEndTime;
+                    for (clashedBooking of clashedBookings) {
+                        updatedStartTime = new moment(updatedStartTime);
+                        let time = new moment(clashedBooking.end - clashedBooking.start);
+                        updatedEndTime = new moment(updatedStartTime).add({hours: time.getHours(), minutes: time.getMinutes()});
+                        await bookingModel.create({title: clashedBooking.title, venueId: clashedBooking.venueId,
+                                userId: clashedBooking.userId, purpose: clashedBooking.purpose, start: updatedStartTime,
+                                end: updatedEndTime});
+                    }
+                }
+                else {
+                    for (clashedBooking of clashedBookings){
+                        for (let i = 0; i < existingBooking.length-1; i++){
+                            let updatedStartTime = existingBooking[i].end, updatedEndTime;
+                            let availableGap = existingBooking[i+1] - existingBooking[i];
+                            if(availableGap > clashedBooking.time){
+                                updatedStartTime = new moment(updatedStartTime);
+                                let time = new Date(clashedBooking.end - clashedBooking.start);
+                                updatedEndTime = new moment(updatedStartTime).add({hours: time.getHours(), 
+                                    minutes: time.getMinutes()});
+                                await bookingModel.create({title: clashedBooking.title, venueId: clashedBooking.venueId,
+                                        userId: clashedBooking.userId, purpose: clashedBooking.purpose, 
+                                        start: updatedStartTime, end: updatedEndTime});
+                                existingBooking = await bookingModel.find({start: {$gte: newEndTime}});
+                                break;
+                            }
+                        }
+                    }
+                    
+                }
 
                 res.status(200).json({status: "Success", data: booking});
             }
