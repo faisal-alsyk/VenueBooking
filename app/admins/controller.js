@@ -10,8 +10,8 @@ module.exports = {
 
    create: async (req, res)=>{
       try{
-         let {name, email, password, adminVerificationCode, phoneNumber, role} = req.body;
-         let user = await userModel.create({name: name, email:email, password: password,
+         let {name, email, password, staffId, adminVerificationCode, phoneNumber, role} = req.body;
+         let user = await userModel.create({name: name, email:email, password: password, staffId: staffId,
          adminVerificationCode: adminVerificationCode, phoneNumber: phoneNumber, role: role});
          const token = jwt.sign({ _id: user.id.toString() }, process.env['SECRET'], { expiresIn: "7 days" });
          

@@ -207,9 +207,7 @@ module.exports = {
             let newStartTime = new Date(start);
             let newEndTime = new Date(end);
             for (bookedVenue of bookedVenues){
-                let existingStartTime = new Date(bookedVenue.start);
-                let existingEndTime = new Date(bookedVenue.end);
-                noClashes = clashesWithExisting(existingStartTime, existingEndTime, newStartTime, newEndTime);
+                noClashes = clashesWithExisting(bookedVenue.start, bookedVenue.end, newStartTime, newEndTime);
                 if(noClashes){
                     clashedBookings.push(bookedVenue);
                     clashbooking.push(bookedVenue._id);
@@ -219,6 +217,7 @@ module.exports = {
                 purpose: purpose, start: start, end: end});
             if (booking) {
                 await bookingModel.remove({_id: {$in: clashbooking}});
+                let existingBooking = await bookingModel.find({})
 
                 res.status(200).json({status: "Success", data: booking});
             }
