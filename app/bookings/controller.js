@@ -1,21 +1,59 @@
 const bookingModel = require('./model');
 const userModel = require('../users/model');
 const venueModel = require('../venues/model');
-const timeGap = require('../../functions/bookings').getTimeSlot;
 const moment = require('moment');
+
+let clashesWithExisting = (existingBookingStart, existingBookingEnd, newBookingStart, newBookingEnd) => {
+    if (newBookingStart >= existingBookingStart && newBookingStart < existingBookingEnd || 
+      existingBookingStart >= newBookingStart && existingBookingStart < newBookingEnd) {
+      
+    //   throw new Error(
+        return `Booking could not be saved. There is a clash with an existing booking from ${moment(existingBookingStart).format('HH:mm')} to ${moment(existingBookingEnd).format('HH:mm on LL')}`
+    //   )
+    }
+    return "true";
+  }
+
+let priorityBookingClashes = (existingBookingStart, existingBookingEnd, newBookingStart, newBookingEnd) => {
+    if (newBookingStart >= existingBookingStart && newBookingStart < existingBookingEnd || 
+      existingBookingStart >= newBookingStart && existingBookingStart < newBookingEnd) {
+      return true;
+    }
+    return false;
+  }
+
+let timeGap = (bookingOneEnd, bookingTwoStart, newBookingStart, newBookingEnd) => {
+    let slotGap = new Date(bookingTwoStart) - new Date(bookingOneEnd);
+    let requiredGap = new Date(newBookingEnd) - new Date(newBookingStart);
+    if(slotGap > requiredGap ){
+        return true;
+    }
+}
 
 module.exports = {
     createBooking: async (req, res) => {
         try {
+            let noClashes = "true";
             let user = await userModel.findOne({_id: req.decoded._id},{password: 0, adminVerificationCode: 0});
             let {title, venueId, purpose, start, end} = req.body;
-            let booking = await bookingModel.create({title: title, venueId: venueId, userId: user._id,
-                    purpose: purpose, start: start, end: end});
-            if (booking) {
-                res.status(200).json({status: "Success", data: booking});
+            const bookedVenues = await bookingModel.find({venueId: venueId});
+            let newStartTime = new Date(start);
+            let newEndTime = new Date(end);
+            for (bookedVenue of bookedVenues){
+                noClashes = clashesWithExisting(bookedVenue.start, bookedVenue.end, existingEndTime, newStartTime, newEndTime);
             }
-            else{
-                res.status(500).json({status: "Failed", message: "Unable to book a Venue"});
+            if(noClashes === "true"){
+                let booking = await bookingModel.create({title: title, venueId: venueId, userId: user._id,
+                    purpose: purpose, start: start, end: end});
+                if (booking) {
+                    res.status(200).json({status: "Success", data: booking});
+                }
+                else{
+                    res.status(500).json({status: "Failed", message: "Unable to book a Venue"});
+                }    
+            }
+            else {
+                res.json({status: "Error", message: noClashes});
             }
         } 
         catch (e) {
@@ -160,9 +198,40 @@ module.exports = {
             return res.status(403).json({ status: "Error", message: e.message });
         }
     },
-    getAvailableTimeSlot : async (req, res) => {
-        let {venueId, start, end } = req.body;
-        const available = await timeGap(venueId, start, end);
-        res.json(available);
+    priorityBooking : async (req, res) => {
+        try {
+            let noClashes = false, clashedBookings = [], clashbooking = [];
+            let user = await userModel.findOne({_id: req.decoded._id},{password: 0, adminVerificationCode: 0});
+            let {title, venueId, purpose, start, end} = req.body;
+            const bookedVenues = await bookingModel.find({venueId: venueId});
+            let newStartTime = new Date(start);
+            let newEndTime = new Date(end);
+            for (bookedVenue of bookedVenues){
+                let existingStartTime = new Date(bookedVenue.start);
+                let existingEndTime = new Date(bookedVenue.end);
+                noClashes = clashesWithExisting(existingStartTime, existingEndTime, newStartTime, newEndTime);
+                if(noClashes){
+                    clashedBookings.push(bookedVenue);
+                    clashbooking.push(bookedVenue._id);
+                }
+            }
+            let booking = await bookingModel.create({title: title, venueId: venueId, userId: user._id,
+                purpose: purpose, start: start, end: end});
+            if (booking) {
+                await bookingModel.remove({_id: {$in: clashbooking}});
+
+                res.status(200).json({status: "Success", data: booking});
+            }
+            else{
+                res.status(500).json({status: "Failed", message: "Unable to book a Venue"});
+            } 
+            
+            
+
+
+        }
+        catch (e) {
+            return res.status(403).json({ status: "Error", message: e.message });
+        }
     }
 }

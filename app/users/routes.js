@@ -2,13 +2,14 @@ const express = require('express');
 const middleware = require('../../functions/middleware');
 const router = express.Router();
 const userController = require('./controller');
+const validation = require('../Validation/users');
 
 
 require('dotenv').config;
 
-router.post('/create', middleware.authenticateToken, userController.create);
+router.post('/create', validation.createUser, middleware.authenticateToken, userController.create);
 router.get('/', middleware.authenticateToken, userController.ListUsers);
-router.post('/login', userController.login);
+router.post('/login', validation.userLogin, userController.login);
 router.post('/forgotpassword', userController.forgotPassword);
 router.get('/authenticate', middleware.authenticateToken, userController.dashboard);
 router.patch('/changepassword', middleware.authenticateToken, userController.changePassword);

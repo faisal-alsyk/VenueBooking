@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
-
+const Venues = require('../venues/model');
+const moment = require('moment');
 //Define a schema
 const Schema = mongoose.Schema;
 const BookingSchema = new Schema({
@@ -20,12 +21,10 @@ const BookingSchema = new Schema({
         trim: true
     },
     start: {
-        type: String,
-        trim: true
+        type: Date
     },
     end: {
-        type: String,
-        trim: true
+        type: Date
     }
     
 },{timestamps: true});

@@ -3,8 +3,9 @@ const venueModel = require('./model');
 module.exports = {
     createVenue: async (req, res) => {
         try {
-            let venue = await venueModel.create({name: req.body.name, size: req.body.size,
-                status: req.body.status, venueId: req.body.venueId});
+            let {name, size, status, venueId} = req.body;
+            let venue = await venueModel.create({name: name, size: size, status: status,
+                 venueId: venueId});
             if (venue) {
                 res.status(200).json({status: "Success", data: venue});
             }
