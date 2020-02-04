@@ -12,9 +12,9 @@ router.get('/', middleware.authenticateToken, userController.ListUsers);
 router.post('/login', validation.userLogin, userController.login);
 router.post('/forgotpassword', userController.forgotPassword);
 router.get('/authenticate', middleware.authenticateToken, userController.dashboard);
-router.patch('/changepassword', validation.updateUser, middleware.authenticateToken, userController.changePassword);
+router.patch('/changepassword', middleware.authenticateToken, userController.changePassword);
 router.post('/resetpassword/:token', userController.resetPassword);
-router.patch('/:id', middleware.authenticateToken, userController.updateUser);
+router.patch('/:id', validation.updateUser,middleware.authenticateToken, userController.updateUser);
 router.delete('/:id', middleware.authenticateToken, userController.removeUser);
 router.get('/:id', middleware.authenticateToken, userController.viewUser);
 

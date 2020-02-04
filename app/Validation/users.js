@@ -80,7 +80,9 @@ module.exports = {
             };
             return res.json({status: "Failed", error: error});
         }
-        next();
+        else {
+            next();
+        } 
     },
     updateUser: async (req, res, next) => {
         let {errName, errEmail, errDepartment, errRole, errStatus} = "";
@@ -91,12 +93,6 @@ module.exports = {
         }
         if ( !email ) {
             errEmail = "Email is Required";
-        }
-        else{
-            let userCount = await userModel.findOne({email: email}).count();
-            if ( userCount > 0 ) {
-                errEmail = "Email already taken";
-            }
         }
         if ( !role ) {
             errRole = "User Role not selected";
@@ -117,6 +113,9 @@ module.exports = {
             };
             return res.json({status: "Failed", error: error});
         }
-        next();
+        else {
+            next();
+        }
+        
     }
 }

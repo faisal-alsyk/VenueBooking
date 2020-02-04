@@ -34,6 +34,15 @@ module.exports = {
             errStatus = "Please define the status of venue";
             return res.json({status: "Failed", role: "Please define the status of venue."});
         }
+        if(errName || errSize || errStatus || errVenue) {
+            let error = {
+                name: errName,
+                size: errSize,
+                role: errStatus,
+                venueId: errVenue
+            }
+            
+        }
         next();
     },
     updateVenue: async (req, res, next) => {
