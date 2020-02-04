@@ -94,13 +94,13 @@ module.exports = {
         if ( !email ) {
             errEmail = "Email is Required";
         }
-        if ( !role ) {
+        if ( !role || role === "Select Role") {
             errRole = "User Role not selected";
         }
-        if ( !department ) {
+        if ( !department || department === "Select Department") {
             errDepartment = "Department not selected";
         }
-        if( !status ){
+        if( !status || status === "Select Status"){
             errStatus = "Status not selected";
         }
         if(errName || errEmail || errRole || errDepartment || errStatus){

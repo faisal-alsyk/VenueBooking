@@ -195,7 +195,7 @@ module.exports = {
     },
     priorityBooking : async (req, res) => {
         try {
-            let clashes = false, clashedBookings = [], clashbooking = [], booking = {}, clashWithPriority = false;
+            let clashes = false, clashedBookings = [], clashbooking = [], booking = {}, clashWithPriority = false, type = "Priority";
             let user = await userModel.findOne({_id: req.decoded._id},{password: 0, adminVerificationCode: 0});
             let {title, venueId, purpose, start, end} = req.body;
             const bookedVenues = await bookingModel.find({venueId: venueId});
@@ -209,9 +209,18 @@ module.exports = {
                     clashbooking.push(bookedVenue._id);
                 }
             }
-
+            
+            for (clashedBooking of clashedBookings) {
+                if(clashedBooking.type === "Priority") {
+                    clashWithPriority = true;
+                    break;
+                }
+            }
+            if(clashWithPriority){
+                return res.status(409).json({status: "Failed", message: "You can not book on already existing Priority Booking"});
+            }
             booking = await bookingModel.create({title: title, venueId: venueId, userId: user._id,
-                purpose: purpose, start: start, end: end});
+                purpose: purpose, start: start, end: end, type: type});
             if (booking) {
                 await bookingModel.remove({_id: {$in: clashbooking}});
                 let existingBooking = await bookingModel.find({start: {$gte: newEndTime}});
@@ -220,8 +229,6 @@ module.exports = {
                     for (clashedBooking of clashedBookings) {
                         updatedStartTime = new moment(updatedStartTime);
                         let time = clashedBooking.end - clashedBooking.start;
-                        // let time = moment.duration((clashedBooking.end).diff(clashedBooking.start));
-                        // let difference = time.asSeconds();
                         updatedEndTime = new moment(updatedStartTime).add(time, 'ms');
                         await bookingModel.create({title: clashedBooking.title, venueId: clashedBooking.venueId,
                                 userId: clashedBooking.userId, purpose: clashedBooking.purpose, start: updatedStartTime,
@@ -237,8 +244,6 @@ module.exports = {
                             if(availableGap > clashedBooking.time){
                                 updatedStartTime = new moment(updatedStartTime);
                                 let time = clashedBooking.end - clashedBooking.start;
-                                // let time = moment.duration((clashedBooking.end).diff(clashedBooking.start));
-                                // let difference = time.asSeconds();
                                 updatedEndTime = new moment(updatedStartTime).add(time, 'ms');
                                 await bookingModel.create({title: clashedBooking.title, venueId: clashedBooking.venueId,
                                         userId: clashedBooking.userId, purpose: clashedBooking.purpose, 
@@ -250,8 +255,6 @@ module.exports = {
                         if ( existingBookingEnd ){
                             let updatedStartTime = new moment(existingBooking[(existingBooking.length)-1].end);
                             let time = clashedBooking.end - clashedBooking.start;
-                            // let time = moment.duration((clashedBooking.end).diff(clashedBooking.start));
-                            // let difference = time.asSeconds();
                             let updatedEndTime = new moment(updatedStartTime).add(time, 'ms');
                             await bookingModel.create({title: clashedBooking.title, venueId: clashedBooking.venueId,
                                     userId: clashedBooking.userId, purpose: clashedBooking.purpose, 
@@ -260,7 +263,6 @@ module.exports = {
                         }
                         existingBooking = await bookingModel.find({start: {$gte: newEndTime}});
                     }
-                    
                 }
 
                 res.status(200).json({status: "Success", data: booking});
