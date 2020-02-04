@@ -26,6 +26,7 @@ let priorityBookingClashes = (existingBookingStart, existingBookingEnd, newBooki
 module.exports = {
     createBooking: async (req, res) => {
         try {
+            const type = "Normal";
             let noClashes = "true";
             let user = await userModel.findOne({_id: req.decoded._id},{password: 0, adminVerificationCode: 0});
             let {title, venueId, purpose, start, end} = req.body;
@@ -37,7 +38,7 @@ module.exports = {
             }
             if(noClashes === "true"){
                 let booking = await bookingModel.create({title: title, venueId: venueId, userId: user._id,
-                    purpose: purpose, start: start, end: end});
+                    purpose: purpose, start: start, end: end, type: type});
                 if (booking) {
                     res.status(200).json({status: "Success", data: booking});
                 }
@@ -55,6 +56,7 @@ module.exports = {
     },
     createBookinginBulk: async (req, res) => {
         try {
+            const type = "Normal";
             let allBookings = [], bookVenue = {}, start = '', end = '';
             let bookings = req.body;
             let user = await userModel.findOne({_id: req.decoded._id}, {adminVerificationCode: 0, password: 0});
@@ -65,7 +67,7 @@ module.exports = {
                 end = moment(`${endDate} ${endTime}`, 'YYYY-MM-DD h:mm:ss').format();
                 if (start && end){
                     bookvenue = await bookingModel.create({title: title, venueId: venue._id, userId: user._id,
-                        purpose: purpose, start: start, end: end});
+                        purpose: purpose, start: start, end: end, type: type});
                     allBookings.push(bookvenue);
                 }
             }
@@ -193,7 +195,7 @@ module.exports = {
     },
     priorityBooking : async (req, res) => {
         try {
-            let clashes = false, clashedBookings = [], clashbooking = [];
+            let clashes = false, clashedBookings = [], clashbooking = [], booking = {}, clashWithPriority = false;
             let user = await userModel.findOne({_id: req.decoded._id},{password: 0, adminVerificationCode: 0});
             let {title, venueId, purpose, start, end} = req.body;
             const bookedVenues = await bookingModel.find({venueId: venueId});
@@ -207,7 +209,8 @@ module.exports = {
                     clashbooking.push(bookedVenue._id);
                 }
             }
-            let booking = await bookingModel.create({title: title, venueId: venueId, userId: user._id,
+
+            booking = await bookingModel.create({title: title, venueId: venueId, userId: user._id,
                 purpose: purpose, start: start, end: end});
             if (booking) {
                 await bookingModel.remove({_id: {$in: clashbooking}});

@@ -25,6 +25,11 @@ const BookingSchema = new Schema({
     },
     end: {
         type: Date
+    },
+    type: {
+        type: String,
+        enum: ["Normal", "Priority"],
+        trim: true
     }
     
 },{timestamps: true});
