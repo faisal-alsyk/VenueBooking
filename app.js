@@ -5,6 +5,7 @@ const express = require('express'),
   admin = require('./app/admins/routes'),
   venues = require('./app/venues/routes'),
   bookings = require('./app/bookings/routes'),
+  public = require('./app/public/routes'),
   passport = require('passport'),
   LocalStrategy = require('passport-local').Strategy,
   bodyParser = require('body-parser'),
@@ -86,6 +87,7 @@ app.use('/api/users', users);
 app.use('/api/admin', admin);
 app.use('/api/venues', venues);
 app.use('/api/bookings', bookings);
+app.use('/api/public', public);
 
 app.use(function (err, req, res, next) {
   if(err.message){

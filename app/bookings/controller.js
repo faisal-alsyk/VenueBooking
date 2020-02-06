@@ -3,14 +3,17 @@ const userModel = require('../users/model');
 const venueModel = require('../venues/model');
 const moment = require('moment');
 
-let clashesWithExisting = (existingBookingStart, existingBookingEnd, newBookingStart, newBookingEnd, type) => {
+let clashesWithExisting = (existingBookingStart, existingBookingEnd, newBookingStart, newBookingEnd, type, title) => {
     if (newBookingStart >= existingBookingStart && newBookingStart < existingBookingEnd ||
         existingBookingStart >= newBookingStart && existingBookingStart < newBookingEnd) {
         if (type === "create") {
             return `Booking could not be saved. There is a clash with an existing booking from ${moment(existingBookingStart).format('HH:mm')} to ${moment(existingBookingEnd).format('HH:mm on LL')}`;
         }
-        else {
+        else if (type === "update") {
             return `Booking could not be Updated. There is a clash with an existing booking from ${moment(existingBookingStart).format('HH:mm')} to ${moment(existingBookingEnd).format('HH:mm on LL')}`
+        }
+        else {
+            return `Event "${title}" could not be saved. There is a clash with an existing booking from ${moment(existingBookingStart).format('HH:mm')} to ${moment(existingBookingEnd).format('HH:mm on LL')}`;
         }
     }
     return "true";
@@ -36,7 +39,7 @@ module.exports = {
             let newStartTime = new moment(start);
             let newEndTime = new moment(end);
             for (bookedVenue of bookedVenues) {
-                noClashes = clashesWithExisting(bookedVenue.start, bookedVenue.end, newStartTime, newEndTime, "create");
+                noClashes = clashesWithExisting(bookedVenue.start, bookedVenue.end, newStartTime, newEndTime, "create", title);
             }
             if (noClashes === "true") {
                 let booking = await bookingModel.create({
@@ -47,7 +50,7 @@ module.exports = {
                     res.status(200).json({ status: "Success", data: booking });
                 }
                 else {
-                    res.status(500).json({ status: "Failed", message: "Unable to book a Venue" });
+                    res.json({ status: "Failed", message: "Unable to book a Venue" });
                 }
             }
             else {
@@ -55,37 +58,53 @@ module.exports = {
             }
         }
         catch (e) {
-            return res.status(403).json({ status: "error", message: e.message });
+            return res.json({ status: "error", message: e.message });
         }
     },
     createBookinginBulk: async (req, res) => {
         try {
+            let noClashes = "true";
             const type = "Normal";
-            let allBookings = [], bookVenue = {}, start = '', end = '';
+            let allBookings = [], bookVenue = {}, start = '', end = '', clashMessages = [];
             let bookings = req.body;
             let user = await userModel.findOne({ _id: req.decoded._id }, { adminVerificationCode: 0, password: 0 });
             for (booking of bookings) {
                 let { title, venueName, purpose, startDate, endDate, startTime, endTime } = booking;
                 let venue = await venueModel.findOne({ name: venueName });
-                start = moment(`${startDate} ${startTime}`, 'YYYY-MM-DD h:mm:ss').format();
-                end = moment(`${endDate} ${endTime}`, 'YYYY-MM-DD h:mm:ss').format();
-                if (start && end) {
-                    bookVenue = await bookingModel.create({
-                        title: title, venueId: venue._id, userId: user._id,
-                        purpose: purpose, start: start, end: end, type: type
-                    });
-                    allBookings.push(bookVenue);
+                if (venue) {
+                    start = moment(`${startDate} ${startTime}`, 'YYYY-MM-DD h:mm:ss').format();
+                    end = moment(`${endDate} ${endTime}`, 'YYYY-MM-DD h:mm:ss').format();
+                    let venues = await bookingModel.find({});
+
+                    if (start && end) {
+                        for (bookvenue of venues) {
+                            noClashes = clashesWithExisting(bookvenue.start, bookvenue.end, start, end, type, title);
+                        }
+                        if (noClashes === "true") {
+                            bookVenue = await bookingModel.create({
+                                title: title, venueId: venue._id, userId: user._id,
+                                purpose: purpose, start: start, end: end, type: type
+                            });
+                            allBookings.push(bookVenue);
+                        }
+                        else {
+                            clashMessages.push(noClashes);
+                        }
+                    }
+                }
+                else {
+                    res.json({ status: "Error", message: "Venue Name you have entered is not Valid. Kindly check if you are missing something." });
                 }
             }
             if (allBookings.length > 0) {
-                res.status(200).json({ status: "Success", data: allBookings });
+                res.status(200).json({ status: "Success", data: allBookings, clashMessages: clashMessages });
             }
             else {
-                res.status(500).json({ status: "Failed", message: "Unable to book a Venues" });
+                res.json({ status: "Failed", message: "Unable to book Venues" });
             }
         }
         catch (e) {
-            return res.status(403).json({ status: "error", message: e.message });
+            return res.json({ status: "error", message: e.message });
         }
     },
     updateBooking: async (req, res) => {
@@ -96,7 +115,7 @@ module.exports = {
             let newStartTime = new moment(start);
             let newEndTime = new moment(end);
             for (bookedVenue of bookedVenues) {
-                noClashes = clashesWithExisting(bookedVenue.start, bookedVenue.end, newStartTime, newEndTime, "update");
+                noClashes = clashesWithExisting(bookedVenue.start, bookedVenue.end, newStartTime, newEndTime, "update", title);
             }
             if (noClashes === "true") {
                 await bookingModel.update({ _id: req.params.id }, {
@@ -153,6 +172,9 @@ module.exports = {
         try {
             let booking = await bookingModel.findOne({ _id: req.params.id });
             if (booking) {
+                let user = await userModel.findOne({ _id: booking.userId }, { password: 0, adminVerificationCode: 0 });
+                booking.userId = null;
+                booking.user = user;
                 return res.status(200).json({ status: "Success", data: booking });
             }
             else {
@@ -293,7 +315,7 @@ module.exports = {
                             existingBooking = await bookingModel.find({ start: { $gte: newEndTime } });
                         }
                     }
-    
+
                     res.status(200).json({ status: "Success", data: booking });
                 }
                 else {

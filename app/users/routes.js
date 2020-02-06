@@ -13,6 +13,7 @@ router.post('/login', validation.userLogin, userController.login);
 router.post('/forgotpassword', userController.forgotPassword);
 router.get('/authenticate', middleware.authenticateToken, userController.dashboard);
 router.patch('/changepassword', middleware.authenticateToken, userController.changePassword);
+router.get('/type', middleware.authenticateToken, userController.userType);
 router.post('/resetpassword/:token', userController.resetPassword);
 router.patch('/:id', validation.updateUser,middleware.authenticateToken, userController.updateUser);
 router.delete('/:id', middleware.authenticateToken, userController.removeUser);

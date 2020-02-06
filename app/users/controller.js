@@ -43,7 +43,10 @@ module.exports = {
             else{
                let User = await userModel.findOne({_id: user.id},{password: 0, adminVerificationCode: 0});
                if(User.role === 'Admin'){
-                  return res.status(403).json({status: "Not Authorized", message: "You cant Login as Admin"});
+                  return res.status(403).json({status: "Not Authorized", message: "You can Login as Admin only"});
+               }
+               else if (User.role === 'Public'){
+                  return res.status(403).json({status: "Not Authorized", message: "You cant Login as a normal user."});
                }
                else{
                   const token = jwt.sign({ _id: user.id.toString() }, process.env['SECRET'], { expiresIn: "7 days" });
@@ -73,8 +76,8 @@ module.exports = {
    updateUser: async (req, res)=>{
       try{
          let {name, email, phoneNumber, department, role} = req.body;
-         await userModel.update({_id: req.params.id}, { name: req.body.name, email: req.body.email, 
-            status: req.body.status, role: req.body.role, department: req.body.department});
+         await userModel.update({_id: req.params.id}, { name: name, email: email, 
+            status: status, role: role, department: department, phoneNumber: phoneNumber});
          const user = await userModel.findOne({ _id: req.params.id }, { password: 0, adminVerificationCode: 0 });
          
          if(user){
@@ -211,6 +214,20 @@ module.exports = {
       else{
          user = false;
          res.status(200).json({status: "Success", data: user});
+      }
+   },
+   userType: async (req, res) => {
+      try {
+         let user = userModel.findOne({_id: req.decoded._id}, {password: 0, adminVerificationCode: 0});
+         if ( user ) {
+            res.status(200).json({status: "Success", data: user.role});
+         }
+         else {
+            res.json({message: "Failed", message: "Something is Wrong."});
+         }
+      }
+      catch (e) {
+         res.json({status: "Error", message: e.message});
       }
    }
 }

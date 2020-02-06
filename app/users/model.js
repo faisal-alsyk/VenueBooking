@@ -18,8 +18,7 @@ const UserSchema = new Schema({
     phoneNumber: {
         type: String,
         unique: true,
-        trim: true,
-        required: true
+        trim: true
     },
     staffId: {
         type: Number,
