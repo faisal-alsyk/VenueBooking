@@ -1,4 +1,5 @@
 const userModel = require('./model');
+const bookingModel = require('../bookings/model');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
@@ -99,6 +100,7 @@ module.exports = {
             return res.status(404).json({ status: "Error", message: " User not Found! " });
          }
          else {
+            await bookingModel.remove({userId: req.params.id});
             return res.status(200).json({ status: "Deleted!", data: user });
          }
       }
