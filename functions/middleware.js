@@ -60,7 +60,7 @@ let authorizeToken = (req, res, next) => {
   }
 };
 
-let publicRoutes = async (req, res, next) => {
+let publicRoutes = (req, res, next) => {
   let token = req.headers['x-access-token'] || req.headers['authorization']; // Express headers are auto converted to lowercase
   if (token && token.startsWith('Bearer ')) {
     // Remove Bearer from string
