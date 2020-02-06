@@ -31,10 +31,10 @@ let priorityBookingClashes = (existingBookingStart, existingBookingEnd, newBooki
 module.exports = {
     createBooking: async (req, res) => {
         try {
+            let user = {};
             const type = "Normal";
             let noClashes = "true";
-            let user = await userModel.findOne({ _id: req.decoded._id }, { password: 0, adminVerificationCode: 0 });
-            let { title, venueId, purpose, start, end } = req.body;
+            let { title, venueId, purpose, start, end, email, phoneNumber } = req.body;
             const bookedVenues = await bookingModel.find({ venueId: venueId });
             let newStartTime = new moment(start);
             let newEndTime = new moment(end);
@@ -42,6 +42,13 @@ module.exports = {
                 noClashes = clashesWithExisting(bookedVenue.start, bookedVenue.end, newStartTime, newEndTime, "create", title);
             }
             if (noClashes === "true") {
+                if (email) {
+                    user = await userModel.create({ email: email, phoneNumber: phoneNumber, role: 'Public' });
+                    user = await userModel.findOne({ _id: user.id });
+                }
+                else {
+                    user = await userModel.findOne({ _id: req.decoded._id }, { password: 0, adminVerificationCode: 0 });
+                }
                 let booking = await bookingModel.create({
                     title: title, venueId: venueId, userId: user._id,
                     purpose: purpose, start: start, end: end, type: type
@@ -156,13 +163,45 @@ module.exports = {
     },
     deleteBooking: async (req, res) => {
         try {
-            let booking = await bookingModel.remove({ _id: req.params.id });
-            if (!booking) {
-                return res.status(404).json({ status: "Error", message: "booking not Found! " });
+            let { email } = req.body, user = {};
+            if (email) {
+                user = await userModel.findOne({ email: email }, { password: 0, adminVerificationCode: 0 });
             }
             else {
-                return res.status(200).json({ status: "Deleted!", data: booking });
+                user = await userModel.findOne({ _id: req.decoded._id }, { password: 0, adminVerificationCode: 0 });
             }
+            if (user.role === 'Admin') {
+                let booking = await bookingModel.remove({ _id: req.params.id });
+                if (!booking) {
+                    return res.status(404).json({ status: "Error", message: "booking not Found! " });
+                }
+                else {
+                    return res.status(200).json({ status: "Deleted!", data: booking });
+                }
+            }
+            else {
+                let booking = await bookingModel.findOne({ _id: req.params.id });
+                if (booking.userId === user._id) {
+                    let booking = await bookingModel.remove({ _id: req.params.id });
+                    if (!booking) {
+                        return res.json({ 
+                            status: "Error",
+                            message: "booking not Found!"
+                        });
+                    }
+                    else {
+                        return res.status(200).json({ status: "Deleted!", data: booking });
+                    }
+                }
+                else {
+                    return res.json({
+                        status: "Failed",
+                        message: "You are not an authorized person to delete other's bookings."
+                    });
+                }
+            }
+
+
         }
         catch (e) {
             return res.status(403).json({ status: "Error", message: e.message });
@@ -174,8 +213,7 @@ module.exports = {
             if (booking) {
                 let user = await userModel.findOne({ _id: booking.userId }, { password: 0, adminVerificationCode: 0 });
                 booking.userId = null;
-                booking.user = user;
-                return res.status(200).json({ status: "Success", data: booking });
+                return res.status(200).json({ status: "Success", data: {booking, user }});
             }
             else {
                 return res.status(404).json({ status: "Failed", message: "Booking not Found" });

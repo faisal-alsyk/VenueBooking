@@ -5,7 +5,6 @@ const express = require('express'),
   admin = require('./app/admins/routes'),
   venues = require('./app/venues/routes'),
   bookings = require('./app/bookings/routes'),
-  public = require('./app/public/routes'),
   passport = require('passport'),
   LocalStrategy = require('passport-local').Strategy,
   bodyParser = require('body-parser'),
@@ -59,13 +58,13 @@ passport.use(new LocalStrategy({
     let isMatch = false;
     let user = await User.findOne({ email: email });
     if (!user) {
-      return done({ message: 'Incorrect email.' }, false);
+      return done({ email: 'Incorrect email.' }, false);
     }
     isMatch = await user.comparePassword(password);
     if (isMatch) {
       return done(null, user);
     } else {
-      return done({ message: 'Incorrect Password.' }, false);
+      return done({ password: 'Incorrect Password.' }, false);
     }
   }
   catch(e){
@@ -87,7 +86,6 @@ app.use('/api/users', users);
 app.use('/api/admin', admin);
 app.use('/api/venues', venues);
 app.use('/api/bookings', bookings);
-app.use('/api/public', public);
 
 app.use(function (err, req, res, next) {
   if(err.message){
