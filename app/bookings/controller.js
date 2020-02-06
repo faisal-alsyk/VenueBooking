@@ -166,9 +166,18 @@ module.exports = {
             let { email } = req.body, user = {};
             if (email) {
                 user = await userModel.findOne({ email: email }, { password: 0, adminVerificationCode: 0 });
+                if ( user ) {
+                    return res.json({status: "Failed", message: "User not Found."});
+                }
+            }
+            else if (req.decoded._id){
+                user = await userModel.findOne({ _id: req.decoded._id }, { password: 0, adminVerificationCode: 0 });
+                if ( user ) {
+                    return res.json({status: "Failed", message: "User not Found."});
+                }
             }
             else {
-                user = await userModel.findOne({ _id: req.decoded._id }, { password: 0, adminVerificationCode: 0 });
+                return res.json({status: "Failed", message: "User not Found."});
             }
             if (user.role === 'Admin') {
                 let booking = await bookingModel.remove({ _id: req.params.id });
