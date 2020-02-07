@@ -207,7 +207,7 @@ module.exports = {
             }
             else {
                 let booking = await bookingModel.findOne({ _id: req.params.id });
-                if (booking.userId === user._id) {
+                if (booking.userId === user.id) {
                     let booking = await bookingModel.remove({ _id: req.params.id });
                     if (!booking) {
                         return res.json({
