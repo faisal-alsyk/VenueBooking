@@ -26,6 +26,10 @@ module.exports = {
             errPhoneNumber = "A Unique Phone Number is Required";
             return res.json({status: "Failed", phoneNumber: "A Unique Phone Number is Required"});
         }
+        else if ( phoneNumber <= 0 ) {
+            errPhoneNumber = "Phone Number should be greater than 0";
+            return res.json({status: "Failed", phoneNumber: "Phone Number should be greater than 0"});
+        }
         else{
             let userCount = await userModel.findOne({phoneNumber: phoneNumber}).count();
             if ( userCount > 0 ) {
@@ -41,9 +45,9 @@ module.exports = {
             errStaffId = "User Id is Required";
             return res.json({status: "Failed", staffId: "Staff Id is Required"});
         }
-        else if ( staffId === 0 ) {
-            errStaffId = "Staff Id should not be 0";
-            return res.json({status: "Failed", staffId: "Staff Id should not be 0"});
+        else if ( staffId <= 0 ) {
+            errStaffId = "Staff Id should not be 0 or less";
+            return res.json({status: "Failed", staffId: "Staff Id should not be 0 or less"});
         }
         else{
             let userCount = await userModel.findOne({staffId: staffId}).count();

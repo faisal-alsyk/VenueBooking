@@ -27,23 +27,21 @@ let priorityBookingClashes = (existingBookingStart, existingBookingEnd, newBooki
     return false;
 }
 
-
 module.exports = {
     createBooking: async (req, res) => {
         try {
             let user = {};
             const role = "Public";
-            const type = "Normal";
             let noClashes = "true";
             let clashes = false;
             let { title, venueId, purpose, start, end, email, phoneNumber } = req.body;
             const bookedVenues = await bookingModel.find({ venueId: venueId });
             let newStartTime = new moment(start);
             let newEndTime = new moment(end);
-            
+
             for (bookedVenue of bookedVenues) {
                 noClashes = clashesWithExisting(bookedVenue.start, bookedVenue.end, newStartTime, newEndTime, "create", title);
-                if( noClashes !== "true"){
+                if (noClashes !== "true") {
                     clashes = true;
                     break;
                 }
@@ -57,13 +55,13 @@ module.exports = {
                     if (!existingUser) {
                         user = await userModel.create({ email: email, phoneNumber: phoneNumber, role: role });
                         user = await userModel.findOne({ _id: user.id });
-                        if ( !user ) {
+                        if (!user) {
                             return res.json({ status: "Failed", message: "Something went wrong. Try Again" });
                         }
                     }
                     else {
                         user = await userModel.findOne({ email: email }, { password: 0, adminVerificationCode: 0 });
-                        if ( !user ) {
+                        if (!user) {
                             return res.json({ status: "Failed", message: "Something went wrong. Try Again" });
                         }
                     }
@@ -71,13 +69,13 @@ module.exports = {
                 }
                 else {
                     user = await userModel.findOne({ _id: req.decoded._id }, { password: 0, adminVerificationCode: 0 });
-                    if ( !user ) {
+                    if (!user) {
                         return res.json({ status: "Failed", message: "Something went wrong. Try Again" });
                     }
                 }
                 let booking = await bookingModel.create({
                     title: title, venueId: venueId, userId: user._id,
-                    purpose: purpose, start: start, end: end, type: type
+                    purpose: purpose, start: start, end: end
                 });
                 if (booking) {
                     res.status(200).json({ status: "Success", data: booking });
@@ -98,8 +96,6 @@ module.exports = {
         try {
             let clashes = false;
             let noClashes = "true";
-            const type = "Normal";
-            const clashesType = "create";
             let allBookings = [], bookVenue = {}, start = '', end = '', clashMessages = [];
             let bookings = req.body;
             let user = await userModel.findOne({ _id: req.decoded._id }, { adminVerificationCode: 0, password: 0 });
@@ -111,13 +107,13 @@ module.exports = {
                     end = new moment(`${endDate} ${endTime}`, 'YYYY-MM-DD h:mm:ss').format();
                     let newStart = new moment(start);
                     let newEnd = new moment(end);
-                    let venues = await bookingModel.find({venueId: venue.id});
-                    
+                    let venues = await bookingModel.find({ venueId: venue.id });
+
                     if (start && end) {
-                        if(venues.length > 0) {
+                        if (venues.length > 0) {
                             for (bookvenue of venues) {
                                 noClashes = clashesWithExisting(bookvenue.start, bookvenue.end, newStart, newEnd, "bulk", title);
-                                if( noClashes !== "true"){
+                                if (noClashes !== "true") {
                                     clashes = false;
                                     clashMessages.push(noClashes);
                                     break;
@@ -129,7 +125,7 @@ module.exports = {
                             if (clashes === true) {
                                 bookVenue = await bookingModel.create({
                                     title: title, venueId: venue._id, userId: user._id,
-                                    purpose: purpose, start: newStart, end: newEnd, type: type
+                                    purpose: purpose, start: newStart, end: newEnd
                                 });
                                 allBookings.push(bookVenue);
                             }
@@ -137,7 +133,7 @@ module.exports = {
                         else {
                             bookVenue = await bookingModel.create({
                                 title: title, venueId: venue._id, userId: user._id,
-                                purpose: purpose, start: newStart, end: newEnd, type: type
+                                purpose: purpose, start: newStart, end: newEnd
                             });
                             allBookings.push(bookVenue);
                         }
@@ -342,76 +338,64 @@ module.exports = {
                     clashbooking.push(bookedVenue._id);
                 }
             }
-
-            for (clashedBooking of clashedBookings) {
-                if (clashedBooking.type === "Priority") {
-                    clashWithPriority = true;
-                    break;
-                }
-            }
-            if (clashWithPriority) {
-                return res.status(409).json({ status: "Failed", message: "You can not book on already existing Priority Booking" });
-            }
-            else {
-                booking = await bookingModel.create({
-                    title: title, venueId: venueId, userId: user._id,
-                    purpose: purpose, start: start, end: end, type: type
-                });
-                if (booking) {
-                    await bookingModel.remove({ _id: { $in: clashbooking } });
-                    let existingBooking = await bookingModel.find({ start: { $gte: newEndTime } });
-                    if (existingBooking.length === 0) {
-                        let updatedStartTime = newEndTime, updatedEndTime;
-                        for (clashedBooking of clashedBookings) {
-                            updatedStartTime = new moment(updatedStartTime);
-                            let time = clashedBooking.end - clashedBooking.start;
-                            updatedEndTime = new moment(updatedStartTime).add(time, 'ms');
-                            await bookingModel.create({
-                                title: clashedBooking.title, venueId: clashedBooking.venueId,
-                                userId: clashedBooking.userId, purpose: clashedBooking.purpose, start: updatedStartTime,
-                                end: updatedEndTime, type: clashedBooking.type
-                            });
-                        }
+            booking = await bookingModel.create({
+                title: title, venueId: venueId, userId: user._id,
+                purpose: purpose, start: start, end: end
+            });
+            if (booking) {
+                await bookingModel.remove({ _id: { $in: clashbooking } });
+                let existingBooking = await bookingModel.find({ start: { $gte: newEndTime } });
+                if (existingBooking.length === 0) {
+                    let updatedStartTime = newEndTime, updatedEndTime;
+                    for (clashedBooking of clashedBookings) {
+                        updatedStartTime = new moment(updatedStartTime);
+                        let time = clashedBooking.end - clashedBooking.start;
+                        updatedEndTime = new moment(updatedStartTime).add(time, 'ms');
+                        await bookingModel.create({
+                            title: clashedBooking.title, venueId: clashedBooking.venueId,
+                            userId: clashedBooking.userId, purpose: clashedBooking.purpose, start: updatedStartTime,
+                            end: updatedEndTime
+                        });
                     }
-                    else {
-                        for (clashedBooking of clashedBookings) {
-                            let existingBookingEnd = true;
-                            for (let i = 0; i < existingBooking.length - 1; i++) {
-                                let updatedStartTime = existingBooking[i].end, updatedEndTime;
-                                let availableGap = existingBooking[i + 1] - existingBooking[i];
-                                if (availableGap > clashedBooking.time) {
-                                    updatedStartTime = new moment(updatedStartTime);
-                                    let time = clashedBooking.end - clashedBooking.start;
-                                    updatedEndTime = new moment(updatedStartTime).add(time, 'ms');
-                                    await bookingModel.create({
-                                        title: clashedBooking.title, venueId: clashedBooking.venueId,
-                                        userId: clashedBooking.userId, purpose: clashedBooking.purpose,
-                                        start: updatedStartTime, end: updatedEndTime, type: clashedBooking.type
-                                    });
-                                    existingBookingEnd = false;
-                                    break;
-                                }
-                            }
-                            if (existingBookingEnd) {
-                                let updatedStartTime = new moment(existingBooking[(existingBooking.length) - 1].end);
+                }
+                else {
+                    for (clashedBooking of clashedBookings) {
+                        let existingBookingEnd = true;
+                        for (let i = 0; i < existingBooking.length - 1; i++) {
+                            let updatedStartTime = existingBooking[i].end, updatedEndTime;
+                            let availableGap = existingBooking[i + 1].start - existingBooking[i].end;
+                            if (availableGap >= clashedBooking.time) {
+                                updatedStartTime = new moment(updatedStartTime);
                                 let time = clashedBooking.end - clashedBooking.start;
-                                let updatedEndTime = new moment(updatedStartTime).add(time, 'ms');
+                                updatedEndTime = new moment(updatedStartTime).add(time, 'ms');
                                 await bookingModel.create({
                                     title: clashedBooking.title, venueId: clashedBooking.venueId,
                                     userId: clashedBooking.userId, purpose: clashedBooking.purpose,
-                                    start: updatedStartTime, end: updatedEndTime, type: clashedBooking.type
+                                    start: updatedStartTime, end: updatedEndTime
                                 });
-                                existingBooking = await bookingModel.find({ start: { $gte: newEndTime } });
+                                existingBookingEnd = false;
+                                break;
                             }
+                        }
+                        if (existingBookingEnd) {
+                            let updatedStartTime = new moment(existingBooking[(existingBooking.length) - 1].end);
+                            let time = clashedBooking.end - clashedBooking.start;
+                            let updatedEndTime = new moment(updatedStartTime).add(time, 'ms');
+                            await bookingModel.create({
+                                title: clashedBooking.title, venueId: clashedBooking.venueId,
+                                userId: clashedBooking.userId, purpose: clashedBooking.purpose,
+                                start: updatedStartTime, end: updatedEndTime
+                            });
                             existingBooking = await bookingModel.find({ start: { $gte: newEndTime } });
                         }
+                        existingBooking = await bookingModel.find({ start: { $gte: newEndTime } });
                     }
+                }
 
-                    res.status(200).json({ status: "Success", data: booking });
-                }
-                else {
-                    res.status(500).json({ status: "Failed", message: "Unable to book a Venue" });
-                }
+                res.status(200).json({ status: "Success", data: booking });
+            }
+            else {
+                res.status(500).json({ status: "Failed", message: "Unable to book a Venue" });
             }
         }
         catch (e) {

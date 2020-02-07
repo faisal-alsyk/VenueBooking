@@ -16,14 +16,17 @@ module.exports = {
         if ( !venueId ) {
             errVenue = "Venue Id is Required";
         }
+        else if ( venueId <= 0 ) {
+            errVenue = "Venue Id should not be 0 or less";
+        }
         else{
             let venueCount = await venueModel.findOne({venueId: venueId}).count();
             if ( venueCount > 0 ) {
                 errVenue = "Venue ID should be Unique";
             }
         }
-        if ( size === 0 ){
-            errSize = "Size should be greater than 0";
+        if ( size <= 0 ){
+            errSize = "Size should be greater than 0 or less";
         }
         if ( !status ) {
             errStatus = "Please define the status of venue";
@@ -45,8 +48,14 @@ module.exports = {
         if ( !name ) {
             errName = "Name for Venue is Required";
         }
-        if ( size === 0 ){
-            errSize = "Size should be greater than 0";
+        else {
+            let venueCount = await venueModel.find({_id: {$ne : req.params.id, name: name}}).count();
+            if (venueCount > 0) {
+                errName = "Name for Venue already taken";
+            }
+        }
+        if ( size <= 0 ){
+            errSize = "Size should be greater than 0 or less";
         }
         if ( !status ) {
             errStatus = "Please define the status of venue";
