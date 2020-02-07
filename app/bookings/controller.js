@@ -184,13 +184,13 @@ module.exports = {
             if (email) {
                 user = await userModel.findOne({ email: email }, { password: 0, adminVerificationCode: 0 });
                 if (!user) {
-                    return res.json({ status: "Failed", message: "Entered Email is not correct. Please provide right Credentials" });
+                    return res.json({ status: "Failed", email: "Entered Email not Found." });
                 }
             }
             else if (req.decoded._id) {
                 user = await userModel.findOne({ _id: req.decoded._id }, { password: 0, adminVerificationCode: 0 });
                 if (!user) {
-                    return res.json({ status: "Failed", message: "Something wet Wrong. Try Again" });
+                    return res.json({ status: "Failed", message: "Something went Wrong. Try Again" });
                 }
             }
             else {
@@ -212,7 +212,7 @@ module.exports = {
                     if (!booking) {
                         return res.json({
                             status: "Error",
-                            message: "booking not Found!"
+                            message: "Something went Wrong!"
                         });
                     }
                     else {
