@@ -20,8 +20,7 @@ const UserSchema = new Schema({
         trim: true
     },
     staffId: {
-        type: Number,
-        unique: true
+        type: Number
     },
     adminVerificationCode: {
         type: String,
