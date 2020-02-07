@@ -32,6 +32,7 @@ module.exports = {
     createBooking: async (req, res) => {
         try {
             let user = {};
+            const role = "Public";
             const type = "Normal";
             let noClashes = "true";
             let { title, venueId, purpose, start, end, email, phoneNumber } = req.body;
@@ -43,11 +44,27 @@ module.exports = {
             }
             if (noClashes === "true") {
                 if (email) {
-                    user = await userModel.create({ email: email, phoneNumber: phoneNumber, role: 'Public' });
-                    user = await userModel.findOne({ _id: user.id });
+                    let existingUser = await userModel.findOne({ email: email }, { password: 0, adminVerificationCode: 0 });
+                    if (!existingUser) {
+                        user = await userModel.create({ email: email, phoneNumber: phoneNumber, role: role });
+                        user = await userModel.findOne({ _id: user.id });
+                        if ( !user ) {
+                            return res.json({ status: "Failed", message: "Something went wrong. Try Again" });
+                        }
+                    }
+                    else {
+                        user = await userModel.findOne({ email: email }, { password: 0, adminVerificationCode: 0 });
+                        if ( !user ) {
+                            return res.json({ status: "Failed", message: "Something went wrong. Try Again" });
+                        }
+                    }
+
                 }
                 else {
                     user = await userModel.findOne({ _id: req.decoded._id }, { password: 0, adminVerificationCode: 0 });
+                    if ( !user ) {
+                        return res.json({ status: "Failed", message: "Something went wrong. Try Again" });
+                    }
                 }
                 let booking = await bookingModel.create({
                     title: title, venueId: venueId, userId: user._id,
@@ -166,23 +183,23 @@ module.exports = {
             let { email } = req.body, user = {};
             if (email) {
                 user = await userModel.findOne({ email: email }, { password: 0, adminVerificationCode: 0 });
-                if ( !user ) {
-                    return res.json({status: "Failed", message: "User not Found."});
+                if (!user) {
+                    return res.json({ status: "Failed", message: "Entered Email is not correct. Please provide right Credentials" });
                 }
             }
-            else if (req.decoded._id){
+            else if (req.decoded._id) {
                 user = await userModel.findOne({ _id: req.decoded._id }, { password: 0, adminVerificationCode: 0 });
-                if ( !user ) {
-                    return res.json({status: "Failed", message: "User not Found."});
+                if (!user) {
+                    return res.json({ status: "Failed", message: "Something wet Wrong. Try Again" });
                 }
             }
             else {
-                return res.json({status: "Failed", message: "User not Found."});
+                return res.json({ status: "Failed", message: "No email or Authentication Supplied" });
             }
             if (user.role === 'Admin') {
                 let booking = await bookingModel.remove({ _id: req.params.id });
                 if (!booking) {
-                    return res.status(404).json({ status: "Error", message: "booking not Found! " });
+                    return res.status(404).json({ status: "Error", message: "Booking not Found! " });
                 }
                 else {
                     return res.status(200).json({ status: "Deleted!", data: booking });
@@ -193,7 +210,7 @@ module.exports = {
                 if (booking.userId === user._id) {
                     let booking = await bookingModel.remove({ _id: req.params.id });
                     if (!booking) {
-                        return res.json({ 
+                        return res.json({
                             status: "Error",
                             message: "booking not Found!"
                         });
@@ -222,7 +239,7 @@ module.exports = {
             if (booking) {
                 let user = await userModel.findOne({ _id: booking.userId }, { password: 0, adminVerificationCode: 0 });
                 booking.userId = null;
-                return res.status(200).json({ status: "Success", data: {booking, user }});
+                return res.status(200).json({ status: "Success", data: { booking, user } });
             }
             else {
                 return res.status(404).json({ status: "Failed", message: "Booking not Found" });

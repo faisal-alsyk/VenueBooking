@@ -33,11 +33,11 @@ const UserSchema = new Schema({
     },
     password: {
         type: String,
-        trim: true,
+        trim: true
     },
     token: {
         type: String,
-        trim: true,
+        trim: true
     },
     resetpasswordtoken: {
         type: String,
@@ -45,7 +45,8 @@ const UserSchema = new Schema({
     },
     role: {
         type: String,
-        enum: ['Admin', 'User', 'Public']
+        enum: ["Admin", "User", "Public"],
+        trim: true
     },
     status: {
         type: String,
@@ -56,7 +57,9 @@ const UserSchema = new Schema({
 },{timestamps: true});
 // hash user password before saving into database
 UserSchema.pre('save', async function (next) {
-    this.password = bcrypt.hashSync(this.password, 10);
+    if ( this.password ){
+        this.password = bcrypt.hashSync(this.password, 10);
+    }
     next();
 });
 
