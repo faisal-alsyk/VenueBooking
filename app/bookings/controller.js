@@ -161,7 +161,7 @@ module.exports = {
         try {
             let noClashes = "true";
             let { title, venueId, purpose, start, end } = req.body;
-            const bookedVenues = await bookingModel.find({ venueId: venueId });
+            const bookedVenues = await bookingModel.find({ venueId: venueId, _id: { $ne: req.params.id } });
             let newStartTime = new moment(start);
             let newEndTime = new moment(end);
             for (bookedVenue of bookedVenues) {

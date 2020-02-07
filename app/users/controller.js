@@ -76,9 +76,9 @@ module.exports = {
    },
    updateUser: async (req, res)=>{
       try{
-         let {name, email, phoneNumber, department, role} = req.body;
+         let {name, email, department, role, status} = req.body;
          await userModel.update({_id: req.params.id}, { name: name, email: email, 
-            status: status, role: role, department: department, phoneNumber: phoneNumber});
+            status: status, role: role, department: department});
          const user = await userModel.findOne({ _id: req.params.id }, { password: 0, adminVerificationCode: 0 });
          
          if(user){
