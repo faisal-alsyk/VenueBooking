@@ -36,10 +36,10 @@ module.exports = {
       try{
          passport.authenticate('local', async (err, user)=>{
             if(err){
-               return res.status(401).json({ status: "Error", message: err.message });
+               return res.json({ status: "Error", message: err, error : err});
             }
             if (!user) {
-               return res.status(404).json({ status: "Error", message: "User does not exist." });
+               return res.json({ status: "Error", message: "User does not exist." });
             }
             else{
                let User = await userModel.findOne({_id: user.id},{password: 0, adminVerificationCode: 0});
