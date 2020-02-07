@@ -82,7 +82,7 @@ module.exports = {
                     res.status(200).json({ status: "Success", data: booking });
                 }
                 else {
-                    res.json({ status: "Failed", message: "Unable to book a Venue", clashMessages: clashMessages });
+                    res.json({ status: "Failed", message: "Unable to book a Venue" });
                 }
             }
             else {
@@ -150,7 +150,7 @@ module.exports = {
                 res.status(200).json({ status: "Success", data: allBookings, clashMessages: clashMessages });
             }
             else {
-                res.json({ status: "Failed", message: "Unable to book Venues" });
+                res.json({ status: "Failed", message: "Unable to book Venues", clashMessages: clashMessages });
             }
         }
         catch (e) {
