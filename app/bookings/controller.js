@@ -40,17 +40,18 @@ module.exports = {
             const bookedVenues = await bookingModel.find({ venueId: venueId });
             let newStartTime = new moment(start);
             let newEndTime = new moment(end);
+            
             for (bookedVenue of bookedVenues) {
                 noClashes = clashesWithExisting(bookedVenue.start, bookedVenue.end, newStartTime, newEndTime, "create", title);
                 if( noClashes !== "true"){
-                    clashes = false;
+                    clashes = true;
                     break;
                 }
                 else {
-                    clashes = true;
+                    clashes = false;
                 }
             }
-            if (clashes === true) {
+            if (clashes === false) {
                 if (email) {
                     let existingUser = await userModel.findOne({ email: email }, { password: 0, adminVerificationCode: 0 });
                     if (!existingUser) {
