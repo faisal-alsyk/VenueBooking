@@ -11,7 +11,7 @@ module.exports = {
             errTitle = "Please provide a booking title";
         }
         if ( !venueId ) {
-            errVenue = "Venue Id is Required";
+            errVenue = "Venue should be selected";
         }
         else {
             let venueCount = await venueModel.findOne({_id: venueId}).count();
@@ -70,24 +70,51 @@ module.exports = {
         next();
     },
     updateBooking: async (req, res, next) => {
-        let {title, venueId, purpose, start, end} = req.body;
+        let {errTitle, errVenue, errStart, errEnd} = "";
+        let {title, venueId,  start, end} = req.body;
         if ( !title ) {
-            return res.json({status: "Failed", title: "Please provide a booking title"});
+            errTitle = "Please provide a booking title";
         }
         if ( !venueId ) {
-            return res.json({status: "Failed", venueId: "Venue not Selected"});
+            errVenue = "Venue should be selected";
         }
         else {
             let venueCount = await venueModel.findOne({_id: venueId}).count();
             if ( venueCount < 1 ) {
-                return res.json({status: "Failed", venueId: "Venue does not exist"});
+                errVenue = "Venue does not exist";
             }
         }
         if ( !start ) {
-            return res.json({status: "Failed", start: "Booking Start Time is not provided"});
+            errStart = "Booking Start Time is not provided";
+        }
+        else {
+            let startTime = moment(start, 'YYYY-MM-DD h:mm:ss', true).isValid();
+            if (!startTime) {
+                errStart = "Format is not Valid";
+            }
         }
         if ( !end ) {
-            return res.json({status: "Failed", end: "Booking End Time is not provided"});
+            errEnd = "Booking End Time is not provided";
+        }
+        else {
+            let endTime = moment(end, 'YYYY-MM-DD h:mm:ss', true).isValid();
+            if (!endTime) {
+                errEnd = "Format is not Valid";
+            }
+        }
+        let validTime = new Date(end) - new Date(start);
+        if ( validTime <= 0 ){
+            errEnd = "End Time should be greater than Start Time";
+        }
+
+        if ( errTitle || errVenue || errStart || errEnd ) {
+            let error = {
+                title: errTitle,
+                venueId: errVenue,
+                start: errStart, 
+                end: errEnd
+            }
+            return res.json({status: "Failed", error: error});
         }
         next();
     }

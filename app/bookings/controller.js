@@ -277,7 +277,7 @@ module.exports = {
             let resources = [], resource = {}, events = [], event = {};
             const role = req.query.role;
             let bookings = [];
-            if (role) {
+            if (role && role !== "All") {
                 let users = await userModel.find({ role: role }, { password: 0, adminVerificationCode: 0 });
                 let usersId = [];
                 users.map(user => {
