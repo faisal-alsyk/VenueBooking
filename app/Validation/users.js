@@ -89,8 +89,8 @@ module.exports = {
         } 
     },
     updateUser: async (req, res, next) => {
-        let {errName, errEmail, errDepartment, errRole, errStatus} = "";
-        let {name, email, status, department, role} = req.body;
+        let {errName, errEmail, errDepartment, errRole, errStatus, errPhoneNumber} = "";
+        let {name, email, status, department, role, phoneNumber} = req.body;
         
         if( !name ) {
             errName = "Name is Required";
@@ -109,26 +109,24 @@ module.exports = {
         }
         if ( !phoneNumber ) {
             errPhoneNumber = "A Unique Phone Number is Required";
-            return res.json({status: "Failed", phoneNumber: "A Unique Phone Number is Required"});
         }
         else if ( phoneNumber <= 0 ) {
             errPhoneNumber = "Phone Number should be greater than 0";
-            return res.json({status: "Failed", phoneNumber: "Phone Number should be greater than 0"});
         }
         else{
             let userCount = await userModel.findOne({phoneNumber: phoneNumber, _id: {$ne: req.params.id}}).count();
             if ( userCount > 0 ) {
                 errPhoneNumber = "Phone Number already taken";
-                return res.json({status: "Failed", phoneNumber: "Phone Number already taken"});
             }
         }
-        if(errName || errEmail || errRole || errDepartment || errStatus){
+        if(errName || errEmail || errRole || errDepartment || errStatus || errPhoneNumber){
             let error = {
                 name: errName,
                 email: errEmail,
                 status: errStatus,
                 role: errRole,
-                department: errDepartment
+                department: errDepartment,
+                phoneNumber: errPhoneNumber
             };
             return res.json({status: "Failed", error: error});
         }

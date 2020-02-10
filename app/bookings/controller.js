@@ -372,8 +372,9 @@ module.exports = {
                 else {
                     for (clashedBooking of clashedBookings) {
                         let existingBookingEnd = true;
-                        let availableGap = existingBooking[i].start - newEndTime;
+                        let availableGap = existingBooking[0].start - new Date(newEndTime);
                         if (availableGap >= clashedBooking.time) {
+                            let updatedStartTime = newEndTime;
                             updatedStartTime = new moment(updatedStartTime);
                             let time = clashedBooking.end - clashedBooking.start;
                             updatedEndTime = new moment(updatedStartTime).add(time, 'ms');
