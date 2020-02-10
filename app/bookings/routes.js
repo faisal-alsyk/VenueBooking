@@ -7,10 +7,10 @@ const validation = require('../Validation/bookings');
 
 require('dotenv').config;
 
-router.post('/', middleware.authenticateToken, bookingController.createBooking);
-router.post('/public', bookingController.createBooking);
+router.post('/',  validation.createBooking, middleware.authenticateToken, bookingController.createBooking);
+router.post('/public', validation.createBooking, bookingController.createBooking);
 router.post('/bulkbooking', middleware.authenticateToken, bookingController.createBookinginBulk);
-router.post('/prioritybooking', middleware.authenticateToken, bookingController.priorityBooking);
+router.post('/prioritybooking', validation.createBooking, middleware.authenticateToken, bookingController.priorityBooking);
 // router.get('/', middleware.authenticateToken, bookingController.listBookings);
 router.get('/', bookingController.getCalendarData);
 router.get('/:id', bookingController.getBooking);
