@@ -2,6 +2,8 @@ const bookingModel = require('./model');
 const userModel = require('../users/model');
 const venueModel = require('../venues/model');
 const moment = require('moment');
+const jwt = require('jsonwebtoken');
+require('dotenv').config;
 
 let clashesWithExisting = (existingBookingStart, existingBookingEnd, newBookingStart, newBookingEnd, type, title) => {
     if (newBookingStart >= existingBookingStart && newBookingStart < existingBookingEnd ||
@@ -287,7 +289,7 @@ module.exports = {
             let bookings = [];
             if (role && role !== "All" && role !== "mybookings") {
                 let users = [];
-                if ( role === "Users" ) {
+                if (role === "Users") {
                     users = await userModel.find({ role: "User" }, { password: 0, adminVerificationCode: 0 });
                 }
                 else {
@@ -300,7 +302,22 @@ module.exports = {
                 bookings = await bookingModel.find({ userId: { $in: usersId } });
             }
             else if (role === "mybookings") {
-                bookings = await bookingModel.find({ userId: req.decoded._id });
+                let token = req.headers['x-access-token'] || req.headers['authorization']; // Express headers are auto converted to lowercase
+                if (token && token.startsWith('Bearer ')) {
+                    token = token.slice(7, token.length);
+                }
+                if (token) {
+                    jwt.verify(token, process.env['SECRET'], async (err, decoded) => {
+                        if (err) {
+                            return res.json({
+                                status: "Failed",
+                                message: 'Token is not valid'
+                            });
+                        } else {
+                            bookings = await bookingModel.find({ userId: decoded._id });
+                        }
+                    });
+                }
             }
             else {
                 bookings = await bookingModel.find({});
