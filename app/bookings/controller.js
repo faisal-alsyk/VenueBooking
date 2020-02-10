@@ -53,7 +53,7 @@ module.exports = {
                 if (email) {
                     let existingUser = await userModel.findOne({ email: email }, { password: 0, adminVerificationCode: 0 });
                     if (!existingUser) {
-                        user = await userModel.create({ email: email, phoneNumber: phoneNumber, role: role });
+                        user = await userModel.create({ email: email, phoneNumber: phoneNumber, role: role, staffId: 0 });
                         user = await userModel.findOne({ _id: user.id });
                         if (!user) {
                             return res.json({ status: "Failed", message: "Something went wrong. Try Again" });
@@ -156,6 +156,7 @@ module.exports = {
     },
     updateBooking: async (req, res) => {
         try {
+            let clashes = false;
             let noClashes = "true";
             let { title, venueId, purpose, start, end } = req.body;
             const bookedVenues = await bookingModel.find({ venueId: venueId, _id: { $ne: req.params.id } });
@@ -163,8 +164,15 @@ module.exports = {
             let newEndTime = new moment(end);
             for (bookedVenue of bookedVenues) {
                 noClashes = clashesWithExisting(bookedVenue.start, bookedVenue.end, newStartTime, newEndTime, "update", title);
+                if (noClashes !== "true") {
+                    clashes = false;
+                    break;
+                }
+                else {
+                    clashes = true;
+                }
             }
-            if (noClashes === "true") {
+            if (clashes) {
                 await bookingModel.update({ _id: req.params.id }, {
                     title: title, venueId: venueId,
                     purpose: purpose, start: start, end: end
@@ -277,13 +285,16 @@ module.exports = {
             let resources = [], resource = {}, events = [], event = {};
             const role = req.query.role;
             let bookings = [];
-            if (role && role !== "All") {
+            if (role && role !== "All" && role !== "My Bookings") {
                 let users = await userModel.find({ role: role }, { password: 0, adminVerificationCode: 0 });
                 let usersId = [];
                 users.map(user => {
                     usersId.push(user._id);
                 });
                 bookings = await bookingModel.find({ userId: { $in: usersId } });
+            }
+            else if (role === "mybookings") {
+                bookings = await bookingModel.find({ userId: req.decoded._id });
             }
             else {
                 bookings = await bookingModel.find({});
@@ -361,26 +372,11 @@ module.exports = {
                 else {
                     for (clashedBooking of clashedBookings) {
                         let existingBookingEnd = true;
-                        for (let i = 0; i < existingBooking.length - 1; i++) {
-                            let updatedStartTime = existingBooking[i].end, updatedEndTime;
-                            let availableGap = existingBooking[i + 1].start - existingBooking[i].end;
-                            if (availableGap >= clashedBooking.time) {
-                                updatedStartTime = new moment(updatedStartTime);
-                                let time = clashedBooking.end - clashedBooking.start;
-                                updatedEndTime = new moment(updatedStartTime).add(time, 'ms');
-                                await bookingModel.create({
-                                    title: clashedBooking.title, venueId: clashedBooking.venueId,
-                                    userId: clashedBooking.userId, purpose: clashedBooking.purpose,
-                                    start: updatedStartTime, end: updatedEndTime
-                                });
-                                existingBookingEnd = false;
-                                break;
-                            }
-                        }
-                        if (existingBookingEnd) {
-                            let updatedStartTime = new moment(existingBooking[(existingBooking.length) - 1].end);
+                        let availableGap = existingBooking[i].start - newEndTime;
+                        if (availableGap >= clashedBooking.time) {
+                            updatedStartTime = new moment(updatedStartTime);
                             let time = clashedBooking.end - clashedBooking.start;
-                            let updatedEndTime = new moment(updatedStartTime).add(time, 'ms');
+                            updatedEndTime = new moment(updatedStartTime).add(time, 'ms');
                             await bookingModel.create({
                                 title: clashedBooking.title, venueId: clashedBooking.venueId,
                                 userId: clashedBooking.userId, purpose: clashedBooking.purpose,
@@ -388,10 +384,38 @@ module.exports = {
                             });
                             existingBooking = await bookingModel.find({ start: { $gte: newEndTime } });
                         }
-                        existingBooking = await bookingModel.find({ start: { $gte: newEndTime } });
+                        else {
+                            for (let i = 0; i < existingBooking.length - 1; i++) {
+                                let updatedStartTime = existingBooking[i].end, updatedEndTime;
+                                let availableGap = existingBooking[i + 1].start - existingBooking[i].end;
+                                if (availableGap >= clashedBooking.time) {
+                                    updatedStartTime = new moment(updatedStartTime);
+                                    let time = clashedBooking.end - clashedBooking.start;
+                                    updatedEndTime = new moment(updatedStartTime).add(time, 'ms');
+                                    await bookingModel.create({
+                                        title: clashedBooking.title, venueId: clashedBooking.venueId,
+                                        userId: clashedBooking.userId, purpose: clashedBooking.purpose,
+                                        start: updatedStartTime, end: updatedEndTime
+                                    });
+                                    existingBookingEnd = false;
+                                    break;
+                                }
+                            }
+                            if (existingBookingEnd) {
+                                let updatedStartTime = new moment(existingBooking[(existingBooking.length) - 1].end);
+                                let time = clashedBooking.end - clashedBooking.start;
+                                let updatedEndTime = new moment(updatedStartTime).add(time, 'ms');
+                                await bookingModel.create({
+                                    title: clashedBooking.title, venueId: clashedBooking.venueId,
+                                    userId: clashedBooking.userId, purpose: clashedBooking.purpose,
+                                    start: updatedStartTime, end: updatedEndTime
+                                });
+                            }
+                            existingBooking = await bookingModel.find({ start: { $gte: newEndTime } });
+                        }
                     }
-                }
 
+                }
                 res.status(200).json({ status: "Success", data: booking });
             }
             else {

@@ -24,7 +24,8 @@ const UserSchema = new Schema({
     },
     adminVerificationCode: {
         type: String,
-        trim: true
+        trim: true,
+        default: "admin"
     },
     department: {
         type: String,

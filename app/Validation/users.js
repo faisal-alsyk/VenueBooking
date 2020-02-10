@@ -107,6 +107,21 @@ module.exports = {
         if( !status || status === "Select Status"){
             errStatus = "Status not selected";
         }
+        if ( !phoneNumber ) {
+            errPhoneNumber = "A Unique Phone Number is Required";
+            return res.json({status: "Failed", phoneNumber: "A Unique Phone Number is Required"});
+        }
+        else if ( phoneNumber <= 0 ) {
+            errPhoneNumber = "Phone Number should be greater than 0";
+            return res.json({status: "Failed", phoneNumber: "Phone Number should be greater than 0"});
+        }
+        else{
+            let userCount = await userModel.findOne({phoneNumber: phoneNumber, _id: {$ne: req.params.id}}).count();
+            if ( userCount > 0 ) {
+                errPhoneNumber = "Phone Number already taken";
+                return res.json({status: "Failed", phoneNumber: "Phone Number already taken"});
+            }
+        }
         if(errName || errEmail || errRole || errDepartment || errStatus){
             let error = {
                 name: errName,

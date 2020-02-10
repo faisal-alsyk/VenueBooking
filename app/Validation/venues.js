@@ -49,7 +49,7 @@ module.exports = {
             errName = "Name for Venue is Required";
         }
         else {
-            let venueCount = await venueModel.find({_id: {$ne : req.params.id, name: name}}).count();
+            let venueCount = await venueModel.find({_id: {$ne : req.params.id}, name: name}).count();
             if (venueCount > 0) {
                 errName = "Name for Venue already taken";
             }
@@ -66,7 +66,7 @@ module.exports = {
                 size: errSize,
                 role: errStatus
             }
-            res.json({status: "Failed", error: error});
+            return res.json({status: "Failed", error: error});
         }
          next();
      }

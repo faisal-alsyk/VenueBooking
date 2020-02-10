@@ -76,9 +76,9 @@ module.exports = {
    },
    updateUser: async (req, res)=>{
       try{
-         let {name, email, department, role, status} = req.body;
+         let {name, email, department, role, status, phoneNumber} = req.body;
          await userModel.update({_id: req.params.id}, { name: name, email: email, 
-            status: status, role: role, department: department});
+            status: status, role: role, department: department, phoneNumber: phoneNumber});
          const user = await userModel.findOne({ _id: req.params.id }, { password: 0, adminVerificationCode: 0 });
          
          if(user){
@@ -111,7 +111,7 @@ module.exports = {
 
    ListUsers: async (req, res)=>{
       try{
-         user = await userModel.find({}, { password: 0, adminVerificationCode: 0});
+         user = await userModel.find({role: {$ne: "Public"}}, { password: 0, adminVerificationCode: 0});
          if(user){
             return res.status(200).json({ status: "Success", message: "All Users", data: user });
          }
