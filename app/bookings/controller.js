@@ -53,7 +53,7 @@ module.exports = {
                 if (email) {
                     let existingUser = await userModel.findOne({ email: email }, { password: 0, adminVerificationCode: 0 });
                     if (!existingUser) {
-                        user = await userModel.create({ email: email, phoneNumber: phoneNumber, role: role, staffId: 0 });
+                        user = await userModel.create({ email: email, phoneNumber: phoneNumber, role: role });
                         user = await userModel.findOne({ _id: user.id });
                         if (!user) {
                             return res.json({ status: "Failed", message: "Something went wrong. Try Again" });
